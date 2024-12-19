@@ -1,0 +1,7 @@
+﻿  main.cpp
+C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(163,19): warning C4244: 'initializing': conversion from 'float' to 'int', possible loss of data
+C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(170,38): warning C4244: '=': conversion from 'Uint32' to 'float', possible loss of data
+C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(284,61): warning C4244: 'argument': conversion from 'float' to 'Uint8', possible loss of data
+C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(284,50): warning C4244: 'argument': conversion from 'float' to 'Uint8', possible loss of data
+C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(284,39): warning C4244: 'argument': conversion from 'float' to 'Uint8', possible loss of data
+  new-sand.vcxproj -> C:\Users\Darien\source\repos\new-sand\x64\Debug\new-sand.exe
