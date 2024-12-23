@@ -13,18 +13,18 @@ int target_fps = 60;
 int tps = 60;
 int t = 0;
 
-SandSim sim(500, 240);
+SandSim sim(200, 120);
 InputManager input;
 
 int mouse_action = 1;
 
 bool run_sim = true;
 
-int tile_size = 2;
+int tile_size = 5;
 
 const int window_margin = 10;
 const int button_size = 50;
-const int button_count = 3;
+const int button_count = 13;
 const int button_rows = 10;
 
 void initialize_window()
@@ -34,7 +34,7 @@ void initialize_window()
 		"Sand",
 		SDL_WINDOWPOS_CENTERED,
 		SDL_WINDOWPOS_CENTERED,
-		sim.x_size * tile_size + window_margin * 2 + (button_size + window_margin) * ((button_count / button_rows) + 1),
+		sim.x_size * tile_size + window_margin * 2 + (button_size + window_margin) * (((button_count - 1) / button_rows) + 1),
 		sim.y_size * tile_size + window_margin * 2,
 		0//SDL_WINDOW_RESIZABLE | SDL_WINDOW_MAXIMIZED
 	);
@@ -65,9 +65,12 @@ void place_tile(int new_tile, int state = 0)
 {
 	int tile[2];
 	screen_to_sim(input.mouse_x, input.mouse_y, tile);
-	for (int x = -5; x < 5; x++)
-	for (int y = -5; y < 5; y++) 
-		if (x*x + y*y < 25)
+
+	const int radius = 5;
+
+	for (int x = -radius; x < radius; x++)
+	for (int y = -radius; y < radius; y++)
+		if (x*x + y*y < radius* radius)
 		{
 			sim.set_tile(tile[0] + x, tile[1] + y, new_tile);
 			sim.make_active(tile[0] + x, tile[1] + y);
@@ -90,22 +93,27 @@ void get_input()
 			case 2:
 				place_tile(WATER);
 				break;
-				/*
+
 			case 3:
-				place_tile(WATER, POWDER);
+				place_tile(ICE);
 				break;
+
 			case 4:
-				place_tile(WATER, GAS);
+				place_tile(STEAM);
 				break;
+				
 			case 5:
-				place_tile(WOOD, SOLID);
+				place_tile(DIRT);
 				break;
+
 			case 6:
-				place_tile(STONE, SOLID);
+				place_tile(STONE);
 				break;
+
 			case 7:
-				place_tile(STONE, LIQUID);
+				place_tile(LAVA);
 				break;
+				/*
 			case 8:
 				for (int x = -5; x < 6; ++x)
 					for (int y = -5; y < 6; ++y)
@@ -116,19 +124,18 @@ void get_input()
 					for (int y = -5; y < 6; ++y)
 						sim.heat_tile(input.mouse_x / sim.tile_size + x, input.mouse_y / sim.tile_size + y, -5);
 				break;
+				*/
 
 				// COLUMN 2
 
 			case 10:
-				place_tile(WIRE, SOLID);
+				place_tile(OIL);
 				break;
+
 			case 11:
-				place_tile(BATTERY, SOLID);
+				place_tile(ACID);
 				break;
-			case 12:
-				place_tile(HEATER, SOLID);
-				break;
-				*/
+				
 			}
 		else// if (input.mouse_x > window_margin * 2 + sim.x_size * sim.tile_size && input.mouse_x < window_margin * 2 + sim.x_size * sim.tile_size + button_size)
 		{
@@ -247,7 +254,7 @@ void draw_sim()
 	SDL_SetRenderDrawColor(renderer, 00, 00, 00, 255);
 	SDL_RenderFillRect(renderer, &background);
 
-	int r = 255, g = 0, b = 0;
+	int r = 0, g = 0, b = 0;
 	float value = 1.0f;
 
 	for (int x = 0; x < sim.x_size; ++x)
@@ -256,32 +263,102 @@ void draw_sim()
 		{
 			if (sim.tiles[x][y]->material == EMPTY)
 				continue;
+
 			//r = sim.tiles[x][y]->r;
 			//g = sim.tiles[x][y]->g;
 			//b = sim.tiles[x][y]->b;
 
+			float value = (((x + 12) * (x + 12) + x^y + (y + 35) * (y + 35) * 2) % 100) / 100.0;
+			value = value * 0.25 + 0.75;
+
 			switch (sim.tiles[x][y]->material)
 			{
-			case EMPTY: // EMPTY
+			case EMPTY:
 				r = 255;
 				g = 255;
 				b = 255;
 				break;
-			case SAND: // SAND
-				r = 255;
-				g = 230;
-				b = 128;
+
+			case SAND:
+				r = 255 * value;
+				g = 230 * value;
+				b = 128 * value;
 				break;
+
 			case WATER:
+				if (!sim.is_tile_empty(x, y + 1) && ((sim.is_tile_empty(x + 1, y) && sim.is_tile_empty(x - 1, y)) || (sim.is_tile_empty(x + 2, y) && sim.is_tile_empty(x - 2, y))))
+					continue;
+
 				r = 0;
 				g = 50;
 				b = 255;
+				// White border
+				if (sim.get_tile(x, y - 1).material == EMPTY && sim.get_tile(x, y + 1).material != EMPTY)
+				{
+					r = 200;
+					g = 200;
+					b = 255;
+				}
+				break;
+
+			case ICE:
+				r = 50;
+				g = 150;
+				b = 255;
+
+				if (
+					//(x + y) % 2 == 0 && 
+					x % 5 == y % 5
+					&& ((x / 7) + (y / 7)) % 2 == 0
+					)
+				{
+					r = 255;
+					g = 255;
+					b = 255;
+				}
+
+				break;
+
+			case STEAM:
+				r = 255 * (value * 0.5 + 0.5);
+				g = 255 * (value * 0.5 + 0.5);
+				b = 255 * (value * 0.5 + 0.5);
+				break;
+
+			case DIRT:
+				r = 128 * value;
+				g = 64 * value;
+				b = 0;
+				break;
+
+			case STONE:
+				r = 50 * value;
+				g = 50 * value;
+				b = 50 * value;
+				break;
+
+			case LAVA:
+				r = 252 * value;
+				g = 157 * value;
+				b = 47 * value;
+				break;
+
+			case OIL:
+				r = 155;
+				g = 118;
+				b = 17;
+				break;
+
+			case ACID:
+				r = 50;
+				g = 175;
+				b = 0;
 				break;
 			}
 			
 
 			SDL_Rect box = { x * tile_size + 10, y * tile_size + 10, tile_size, tile_size };
-			SDL_SetRenderDrawColor(renderer, r * value, g * value, b * value, 255);
+			SDL_SetRenderDrawColor(renderer, r * 1, g * 1, b * 1, 255);
 			SDL_RenderFillRect(renderer, &box);
 		}
 	}

@@ -10,6 +10,13 @@ enum {
 	EMPTY,
 	SAND,
 	WATER,
+	ICE,
+	STEAM,
+	DIRT,
+	STONE,
+	LAVA,
+	OIL,
+	ACID,
 };
 
 class Particle
@@ -20,9 +27,12 @@ public:
 	~Particle() {};
 
 	void swap(int x_, int y_);
-	void move_to(int x_, int y_) { swap(x_, y_); };
+	virtual void move_to(int x_, int y_) { swap(x_, y_); };
 
 	virtual bool tick() { return false; };
+
+	void set_tile(int x_, int y_, int m_);
+	void remove() { about_to_delete = true; };
 
 	int last_tick = 0;
 
@@ -30,32 +40,119 @@ public:
 	int x = 0, y = 0;
 	int r = 255, g = 0, b = 0;
 
+	bool about_to_delete = false;
+
 	SandSim* sim = 0;
 };
 
-class Air : public Particle
+class Air : public Particle {};
+
+class Powder : public Particle
+{
+public:
+	int density = 1001;
+	bool tick();
+	int get_move_speed(int x_, int y_);
+};
+
+class Solid : public Particle
+{
+public:
+	virtual void melt() {};
+};
+
+class Liquid : public Particle
+{
+public:
+	int direction = std::rand() % 2 ? -1 : 1;
+	int density = 1000; // Measured in kg/m^3; water is 1000
+	int spread = 4;
+	
+	bool tick();
+	virtual bool can_move_through(int x_, int y_);
+
+	virtual void freeze() {};
+	virtual void evaporate() {};
+};
+
+class Gas : public Particle
+{
+public:
+	bool tick();
+	virtual void condense() {};
+};
+
+class Sand : public Powder
+{
+public:
+	Sand()
+	{
+		density = 1442;
+	}
+};
+
+class Water : public Liquid
+{
+public:
+	void freeze() { set_tile(x, y, ICE); }
+	void evaporate() { set_tile(x, y, STEAM); }
+};
+
+class Ice : public Solid
+{
+public:
+	void melt() { set_tile(x, y, WATER); }
+};
+
+class Steam : public Gas
+{
+public:
+	void condense() { set_tile(x, y, WATER); }
+};
+
+class Dirt : public Powder
+{
+public:
+	Dirt()
+	{
+		density = 1600;
+	}
+};
+
+class Stone : public Solid
 {
 
 };
 
-class Fluid : public Particle
+class Lava : public Liquid
 {
 public:
-	int bias = std::rand() % 1 == 0 ? -1 : 1;
-	bool flow_directions[5] = { 0, 0, 0, 0, 0 };
+	Lava()
+	{
+		spread = 1;
+		density = 2500;
+	}
 	bool tick();
 };
 
-class Sand : public Fluid
+class Oil : public Liquid
 {
 public:
-	Sand() { flow_directions[0] = 1; flow_directions[1] = 1; };
+	Oil()
+	{
+		density = 800;
+	}
 };
 
-class Water : public Fluid
+class Acid : public Liquid
 {
 public:
-	Water() { flow_directions[0] = 1; flow_directions[1] = 1; flow_directions[2] = 1; };
+	Acid()
+	{
+		density = 400;
+	}
+	void move_to(int x_, int y_);
+	bool can_move_through(int x_, int y_);
 };
 
 #endif

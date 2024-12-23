@@ -76,6 +76,9 @@ void SandSim::swap_tiles(int x1, int y1, int x2, int y2)
 		tiles[x2][y2]->x = x2;
 		tiles[x2][y2]->y = y2;
 
+		make_active(x1, y1);
+		make_active(x2, y2);
+
 		// Debug print
 		/*
 		std::cout << "\n=================================\n";
@@ -106,6 +109,27 @@ Particle* SandSim::create_element(int material)
 		break;
 	case WATER:
 		ptr = new Water;
+		break;
+	case ICE:
+		ptr = new Ice;
+		break;
+	case STEAM:
+		ptr = new Steam;
+		break;
+	case DIRT:
+		ptr = new Dirt;
+		break;
+	case STONE:
+		ptr = new Stone;
+		break;
+	case LAVA:
+		ptr = new Lava;
+		break;
+	case OIL:
+		ptr = new Oil;
+		break;
+	case ACID:
+		ptr = new Acid;
 		break;
 	default:
 		ptr = new Air;
@@ -153,6 +177,8 @@ void SandSim::simulate_tile(int x, int y)
 		tiles[x][y]->last_tick = time;
 		if (tiles[x][y]->tick())
 			make_active(x, y);
+		if (tiles[x][y]->about_to_delete)
+			set_tile(x, y, EMPTY);
 	}
 }
 
@@ -160,6 +186,7 @@ void SandSim::make_active(int tile_x, int tile_y)
 {
 	if (tile_x < 0 || tile_x >= x_size || tile_y < 0 || tile_y >= y_size)
 		return;
+
 	chunks[tile_x / chunk_size][tile_y / chunk_size].active_next = true;
 
 	if (tile_x % chunk_size == 0 && tile_x != 0)
