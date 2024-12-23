@@ -66,7 +66,7 @@ void place_tile(int new_tile, int state = 0)
 	int tile[2];
 	screen_to_sim(input.mouse_x, input.mouse_y, tile);
 
-	const int radius = 5;
+	const int radius = 10;
 
 	for (int x = -radius; x < radius; x++)
 	for (int y = -radius; y < radius; y++)

@@ -1,20 +1,3 @@
-﻿  main.cpp
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(170,19): warning C4244: 'initializing': conversion from 'float' to 'int', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(177,38): warning C4244: '=': conversion from 'Uint32' to 'float', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(271,16): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(272,25): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(283,13): warning C4244: '=': conversion from 'float' to 'int', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(284,13): warning C4244: '=': conversion from 'float' to 'int', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(285,13): warning C4244: '=': conversion from 'float' to 'int', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(323,13): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(324,13): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(325,13): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(329,13): warning C4244: '=': conversion from 'float' to 'int', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(330,12): warning C4244: '=': conversion from 'float' to 'int', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(335,12): warning C4244: '=': conversion from 'float' to 'int', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(336,12): warning C4244: '=': conversion from 'float' to 'int', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(337,12): warning C4244: '=': conversion from 'float' to 'int', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(341,13): warning C4244: '=': conversion from 'float' to 'int', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(342,13): warning C4244: '=': conversion from 'float' to 'int', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(343,12): warning C4244: '=': conversion from 'float' to 'int', possible loss of data
+﻿  sandsim.cpp
+C:\Users\Darien\source\repos\new-sand\new-sand\sandsim.cpp(41): warning C4172: returning address of local variable or temporary: barrier
   new-sand.vcxproj -> C:\Users\Darien\source\repos\new-sand\x64\Debug\new-sand.exe

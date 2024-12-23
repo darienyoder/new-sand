@@ -154,7 +154,7 @@ void SandSim::update()
 	int sim_dir = std::rand() % 2;
 	// For every chunk...
 	for (int chunk_x = 0; chunk_x < x_size / chunk_size; ++chunk_x)
-	for (int chunk_y = 0; chunk_y < y_size / chunk_size; ++chunk_y)
+	for (int chunk_y = y_size / chunk_size - 1; chunk_y > -1; --chunk_y)
 		// If that chunk is active...
 		if (chunks[chunk_x][chunk_y].active)
 			// Divide the chunk into checkerboards
