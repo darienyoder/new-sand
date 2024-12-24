@@ -2,6 +2,7 @@
 #define SANDSIM
 
 #include "particle.hpp"
+#include <vector>
 
 class Particle;
 
@@ -38,6 +39,8 @@ public:
 	void make_active(int tile_x, int tile_y);
 
 	void clear();
+
+	std::vector<std::vector<int>> get_texture_data();
 
 	int x_size = 0, y_size = 0;
 	int time;

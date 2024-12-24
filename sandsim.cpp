@@ -3,6 +3,8 @@
 
 SandSim::SandSim(int width, int height)
 {
+	//texture = new int[x_size][y_size];
+
 	tiles = new Particle** [width];
 	for (int i = 0; i < width; ++i)
 	{
@@ -54,6 +56,8 @@ void SandSim::set_tile(int x, int y, int material)
 		tiles[x][y]->y = y;
 
 		delete temp;
+
+		std::cout << "\n(" << x << ", " << y << ")";
 	}
 }
 
@@ -198,4 +202,26 @@ void SandSim::make_active(int tile_x, int tile_y)
 		chunks[tile_x / chunk_size][tile_y / chunk_size - 1].active_next = true;
 	if (tile_y % chunk_size == chunk_size - 1 && tile_y != y_size - 1)
 		chunks[tile_x / chunk_size][tile_y / chunk_size + 1].active_next = true;
+}
+
+std::vector<std::vector<int>> SandSim::get_texture_data()
+{
+	std::vector<std::vector<int>> materialMatrix;
+
+	// Resize the materialMatrix to match the dimensions of particleMatrix
+	materialMatrix.resize(x_size);
+	for (size_t i = 0; i < x_size; ++i) {
+		materialMatrix[i].resize(y_size);
+		for (size_t j = 0; j < y_size; ++j) {
+			// Check if the pointer is not null before accessing
+			if (tiles[i][j] != nullptr) {
+				materialMatrix[i][j] = tiles[i][j]->material;
+			}
+			else {
+				materialMatrix[i][j] = 0; // or some default value for null particles
+			}
+		}
+	}
+
+	return materialMatrix;
 }

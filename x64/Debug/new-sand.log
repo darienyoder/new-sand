@@ -1,3 +1,7 @@
-﻿  sandsim.cpp
-C:\Users\Darien\source\repos\new-sand\new-sand\sandsim.cpp(41): warning C4172: returning address of local variable or temporary: barrier
+﻿  main.cpp
+C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(136,22): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(137,22): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(324,19): warning C4244: 'initializing': conversion from 'float' to 'int', possible loss of data
+C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(331,38): warning C4244: '=': conversion from 'Uint32' to 'float', possible loss of data
+C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(540,94): warning C4267: 'argument': conversion from 'size_t' to 'GLsizei', possible loss of data
   new-sand.vcxproj -> C:\Users\Darien\source\repos\new-sand\x64\Debug\new-sand.exe
