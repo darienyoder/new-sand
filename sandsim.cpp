@@ -56,8 +56,6 @@ void SandSim::set_tile(int x, int y, int material)
 		tiles[x][y]->y = y;
 
 		delete temp;
-
-		std::cout << "\n(" << x << ", " << y << ")";
 	}
 }
 

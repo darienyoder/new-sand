@@ -22,14 +22,14 @@ int t = 0;
 int window_size[2];
 int mouse_position[2] { 0, 0 };
 
-SandSim sim(200, 120);
+SandSim sim(300, 180);
 InputManager input;
 
 int mouse_action = 1;
 
 bool run_sim = true;
 
-int tile_size = 5;
+int tile_size = 4;
 
 const int window_margin = 10;
 const int button_size = 50;
@@ -57,21 +57,10 @@ uniform vec2 window_size;
 
 void main() {
 
-	ivec2 coords = (ivec2(gl_FragCoord.xy) - ivec2(10, 10)) / 5;
+	ivec2 coords = (ivec2(gl_FragCoord.xy) - ivec2(10, 10)) / 4;
 
-	color = texture(materialTexture, coords.yx / vec2(200, 120));
+	color = texture(materialTexture, coords.yx / vec2(180, 300));
 
-/* ////////////////////
-	if (coords.x >= 0 && coords.x < 200 && coords.y >= 0 && coords.y < 120)
-	{
-		if ( (coords.x + coords.y) % 2 == 0 )
-			color = vec4(0, 1, 0, 1);
-		else
-			color = vec4(1, 0, 0, 1);
-	}
-	else
-		color = vec4(1, 0, 1, 1);
-*/ ///////////////////
 
 }
 )";
@@ -139,10 +128,15 @@ static void cursor_position_callback(GLFWwindow* window_, double xpos, double yp
 
 void on_click(void);
 
+bool clicking = false;
+
 void mouse_button_callback(GLFWwindow* window_, int button, int action, int mods)
 {
 	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
-		on_click();
+		clicking = true;
+
+	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE)
+		clicking = false;
 }
 
 void setup()
@@ -230,6 +224,9 @@ void place_tile(int new_tile, int state = 0)
 void get_input()
 {
 	glfwPollEvents();
+
+	if (clicking)
+		on_click();
 
 	input.update();
 }
@@ -545,7 +542,7 @@ void draw_sim2()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	// Upload the texture data
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32I, sim.x_size, sim.y_size, 0, GL_RED_INTEGER, GL_INT, flatData.data());
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32I, sim.y_size, sim.x_size, 0, GL_RED_INTEGER, GL_INT, flatData.data());
 
 	// Generate mipmaps (optional, depending on your use case)
 	glGenerateMipmap(GL_TEXTURE_2D);
