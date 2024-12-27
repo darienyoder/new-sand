@@ -56,53 +56,60 @@ uniform isampler2D materialTexture;
 uniform int tile_size;
 uniform vec2 window_size;
 
+int get_material(vec2 coords)
+{
+	return texture(materialTexture, coords.yx / window_size.yx * tile_size).r;
+}
+
+vec3 get_material_color(int material, float value)
+{
+	if (material == 0)
+		return vec3(0.0);
+	else if (material == 1) // SAND
+		return vec3(1.0, 0.9, 0.5) * value;
+	else if (material == 2) // WATER
+		return vec3(0.0, 0.2, 1.0);
+	else if (material == 3) // ICE
+		return vec3(0.2, 0.6, 1.0);
+	else if (material == 4) // STEAM
+		return vec3(0.9, 0.9, 0.9) * 0.0;
+	else if (material == 5) // DIRT
+		return vec3(0.5, 0.25, 0.0) * value;
+	else if (material == 6) // STONE
+		return vec3(0.2, 0.2, 0.2) * value;
+	else if (material == 7) // LAVA
+		return vec3(0.9, 0.6, 0.2) * value;
+	else if (material == 8) // OIL
+		return vec3(0.6, 0.4, 0.1);
+	else if (material == 9) // ACID
+		return vec3(0.4, 0.7, 0.0);
+
+	return vec3(1.0, 0.2, 1.0);
+}
+
 void main() {
 
 	ivec2 coords = (ivec2(gl_FragCoord.xy) - ivec2(10, 10)) / tile_size;
 
-	int material = texture(materialTexture, coords.yx / window_size.yx * tile_size).r;
-
-	if (material == 0)
-		color.rgb = vec3(0.0);
-	else if (material == 1) // SAND
-		color.rgb = vec3(1.0, 0.9, 0.5);
-	else if (material == 2) // WATER
-		color.rgb = vec3(0.0, 0.2, 1.0);
-	else if (material == 3) // ICE
-		color.rgb = vec3(0.2, 0.6, 1.0);
-	else if (material == 4) // STEAM
-		color.rgb = vec3(0.9, 0.9, 0.9) * 0.0;
-	else if (material == 5) // DIRT
-		color.rgb = vec3(0.5, 0.25, 0.0);
-	else if (material == 6) // STONE
-		color.rgb = vec3(0.2, 0.2, 0.2);
-	else if (material == 7) // LAVA
-		color.rgb = vec3(0.9, 0.6, 0.2);
-	else if (material == 8) // OIL
-		color.rgb = vec3(0.6, 0.4, 0.1);
-	else if (material == 9) // ACID
-		color.rgb = vec3(0.4, 0.7, 0.0);
-
-
-	else // Error Texture
-	{
-		if ((coords.x + coords.y) % 2 == 0)
-			color.rgb = vec3(1.0, 0.2, 1.0);
-		else
-			color.rgb = vec3(0.0, 0.0, 0.0);
-	}
+	int material = get_material(coords);
 	
-	int cover = 0;
+	float value = ( int(pow(coords.x % 50 + 50, (coords.y % 20 + 20) * 0.1)) % 100) / 100.0;
+	value = value * 0.25 + 0.75;
+	
+	color.rgb = get_material_color(material, value);
+	
 	for (int x = -5; x < 6; x++)
 	for (int y = -5; y < 6; y++)
 	{
-		if (x*x + y*y <= 25 && texture(materialTexture, (coords.yx + vec2(x, y)) / window_size.yx * tile_size).r == 4)
-			color.rgb += vec3(0.01 * (1.0 + int(material != 4 && material != 0)));
-		else if (x*x + y*y <= 9 && texture(materialTexture, (coords.yx + vec2(x, y)) / window_size.yx * tile_size).r != 0)
-			cover += 1;
+		if (x*x + y*y <= 25)
+		{
+			int neighbor = get_material(coords + vec2(x, y));
+			if ((material == 0 || material == 4) && neighbor == 4)
+				color.rgb += vec3(0.01);
+			if (material == 2 && neighbor == 0 && x == 0 && y == -1)
+				color.rbg = vec3(1.0, 1.0, 1.0);
+		}
 	}
-	if (cover > 20)
-		color.rgb -= vec3((cover - 20) * 0.2);
 
 }
 )";
@@ -266,7 +273,7 @@ void place_tile(int new_tile, int state = 0)
 	int tile[2];
 	screen_to_sim(mouse_position[0], mouse_position[1], tile);
 
-	const int radius = 5;
+	const int radius = 10;
 
 	for (int x = -radius; x < radius; x++)
 	for (int y = -radius; y < radius; y++)
