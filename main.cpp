@@ -16,7 +16,7 @@ GLFWwindow* window;
 bool game_is_running = false;
 float time_since_last_frame = 0.0;
 int target_fps = 60;
-int tps = 5;
+int tps = 60;
 int t = 0;
 
 int window_size[2];
@@ -51,27 +51,27 @@ const char* fragmentShaderSource = R"(
 layout(origin_upper_left) in vec4 gl_FragCoord;
 out vec4 color;
 
+uniform isampler2D materialTexture;
+
 uniform vec2 window_size;
-uniform int data[24000];
 
 void main() {
 
 	ivec2 coords = (ivec2(gl_FragCoord.xy) - ivec2(10, 10)) / 5;
 
+	color = texture(materialTexture, coords.yx / vec2(200, 120));
+
+/* ////////////////////
 	if (coords.x >= 0 && coords.x < 200 && coords.y >= 0 && coords.y < 120)
 	{
-		int index = coords.y + coords.x * 120;
-		
-		if (index >= 0 && index < 10)
-		{
-			if ( data[24000 - 1] == 1 )
-				color = vec4(0, 1, 0, 1);
-			else
-				color = vec4(1, 0, 0, 1);
-		}
+		if ( (coords.x + coords.y) % 2 == 0 )
+			color = vec4(0, 1, 0, 1);
+		else
+			color = vec4(1, 0, 0, 1);
 	}
 	else
 		color = vec4(1, 0, 1, 1);
+*/ ///////////////////
 
 }
 )";
@@ -214,7 +214,7 @@ void screen_to_sim(int x, int y, int output[])
 void place_tile(int new_tile, int state = 0)
 {
 	int tile[2];
-	screen_to_sim(input.mouse_x, input.mouse_y, tile);
+	screen_to_sim(mouse_position[0], mouse_position[1], tile);
 
 	const int radius = 10;
 
@@ -527,20 +527,43 @@ void draw_sim()
 
 void draw_sim2()
 {
-	// Flatten the 2D vector into a 1D vector
-	std::vector<std::vector<int>> texture_matrix = sim.get_texture_data();
-	std::vector<int> flat_data;
-	for (int i = 0; i < sim.x_size; i++)
-	{
-		flat_data.insert(flat_data.end(), texture_matrix[i].begin(), texture_matrix[i].end());
+	auto materialMatrix = sim.get_texture_data();
+
+	std::vector<int> flatData;
+	for (const auto& row : materialMatrix) {
+		flatData.insert(flatData.end(), row.begin(), row.end());
 	}
 
+	GLuint textureID;
+	glGenTextures(1, &textureID);
+	glBindTexture(GL_TEXTURE_2D, textureID);
+
+	// Set texture parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	// Upload the texture data
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32I, sim.x_size, sim.y_size, 0, GL_RED_INTEGER, GL_INT, flatData.data());
+
+	// Generate mipmaps (optional, depending on your use case)
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+	// Unbind the texture
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	// Use the shader program
 	glUseProgram(shaderProgram);
 
-	glUniform1iv(glGetUniformLocation(shaderProgram, "data"), flat_data.size(), flat_data.data());
+	// Bind the texture to a texture unit
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, textureID);
+
+	// Set the sampler uniform in the shader
+	glUniform1i(glGetUniformLocation(shaderProgram, "materialTexture"), 0);
 	
 	float fl_winsize[2] = { float(sim.x_size * tile_size), float(sim.y_size * tile_size) };
-	
 	glUniform2fv(glGetUniformLocation(shaderProgram, "window_size"), 1, fl_winsize);
 
 	////////////////////////////////////////////////////////////////////////
