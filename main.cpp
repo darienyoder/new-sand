@@ -22,14 +22,14 @@ int t = 0;
 int window_size[2];
 int mouse_position[2] { 0, 0 };
 
-SandSim sim(300, 180);
+SandSim sim(200, 120);
 InputManager input;
 
 int mouse_action = 1;
 
 bool run_sim = true;
 
-int tile_size = 4;
+int tile_size = 8;
 
 const int window_margin = 10;
 const int button_size = 50;
@@ -53,14 +53,56 @@ out vec4 color;
 
 uniform isampler2D materialTexture;
 
+uniform int tile_size;
 uniform vec2 window_size;
 
 void main() {
 
-	ivec2 coords = (ivec2(gl_FragCoord.xy) - ivec2(10, 10)) / 4;
+	ivec2 coords = (ivec2(gl_FragCoord.xy) - ivec2(10, 10)) / tile_size;
 
-	color = texture(materialTexture, coords.yx / vec2(180, 300));
+	int material = texture(materialTexture, coords.yx / window_size.yx * tile_size).r;
 
+	if (material == 0)
+		color.rgb = vec3(0.0);
+	else if (material == 1) // SAND
+		color.rgb = vec3(1.0, 0.9, 0.5);
+	else if (material == 2) // WATER
+		color.rgb = vec3(0.0, 0.2, 1.0);
+	else if (material == 3) // ICE
+		color.rgb = vec3(0.2, 0.6, 1.0);
+	else if (material == 4) // STEAM
+		color.rgb = vec3(0.9, 0.9, 0.9) * 0.0;
+	else if (material == 5) // DIRT
+		color.rgb = vec3(0.5, 0.25, 0.0);
+	else if (material == 6) // STONE
+		color.rgb = vec3(0.2, 0.2, 0.2);
+	else if (material == 7) // LAVA
+		color.rgb = vec3(0.9, 0.6, 0.2);
+	else if (material == 8) // OIL
+		color.rgb = vec3(0.6, 0.4, 0.1);
+	else if (material == 9) // ACID
+		color.rgb = vec3(0.4, 0.7, 0.0);
+
+
+	else // Error Texture
+	{
+		if ((coords.x + coords.y) % 2 == 0)
+			color.rgb = vec3(1.0, 0.2, 1.0);
+		else
+			color.rgb = vec3(0.0, 0.0, 0.0);
+	}
+	
+	int cover = 0;
+	for (int x = -5; x < 6; x++)
+	for (int y = -5; y < 6; y++)
+	{
+		if (x*x + y*y <= 25 && texture(materialTexture, (coords.yx + vec2(x, y)) / window_size.yx * tile_size).r == 4)
+			color.rgb += vec3(0.01 * (1.0 + int(material != 4 && material != 0)));
+		else if (x*x + y*y <= 9 && texture(materialTexture, (coords.yx + vec2(x, y)) / window_size.yx * tile_size).r != 0)
+			cover += 1;
+	}
+	if (cover > 20)
+		color.rgb -= vec3((cover - 20) * 0.2);
 
 }
 )";
@@ -118,6 +160,12 @@ void key_callback(GLFWwindow* window_, int key, int scancode, int action, int mo
 {
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 		glfwSetWindowShouldClose(window_, 1);
+	if (key == GLFW_KEY_GRAVE_ACCENT && action == GLFW_PRESS)
+	{
+		mouse_action = (mouse_action + 1) % button_count;
+		if (mouse_action == 0)
+			mouse_action++;
+	}
 }
 
 static void cursor_position_callback(GLFWwindow* window_, double xpos, double ypos)
@@ -129,6 +177,7 @@ static void cursor_position_callback(GLFWwindow* window_, double xpos, double yp
 void on_click(void);
 
 bool clicking = false;
+bool r_clicking = false;
 
 void mouse_button_callback(GLFWwindow* window_, int button, int action, int mods)
 {
@@ -137,6 +186,13 @@ void mouse_button_callback(GLFWwindow* window_, int button, int action, int mods
 
 	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE)
 		clicking = false;
+
+
+	if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
+		r_clicking = true;
+
+	if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_RELEASE)
+		r_clicking = false;
 }
 
 void setup()
@@ -210,7 +266,7 @@ void place_tile(int new_tile, int state = 0)
 	int tile[2];
 	screen_to_sim(mouse_position[0], mouse_position[1], tile);
 
-	const int radius = 10;
+	const int radius = 5;
 
 	for (int x = -radius; x < radius; x++)
 	for (int y = -radius; y < radius; y++)
@@ -227,6 +283,8 @@ void get_input()
 
 	if (clicking)
 		on_click();
+	else if (r_clicking)
+		place_tile(EMPTY);
 
 	input.update();
 }
@@ -437,9 +495,9 @@ void draw_sim()
 				break;
 
 			case SAND:
-				r = 255 * value;
-				g = 230 * value;
-				b = 128 * value;
+				r = 255 * value; // 1.
+				g = 230 * value; // .9
+				b = 128 * value; // .5
 				break;
 
 			case WATER:
@@ -562,6 +620,7 @@ void draw_sim2()
 	
 	float fl_winsize[2] = { float(sim.x_size * tile_size), float(sim.y_size * tile_size) };
 	glUniform2fv(glGetUniformLocation(shaderProgram, "window_size"), 1, fl_winsize);
+	glUniform1i(glGetUniformLocation(shaderProgram, "tile_size"), tile_size);
 
 	////////////////////////////////////////////////////////////////////////
 
