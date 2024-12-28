@@ -1,4 +1,3 @@
-
 #define GLEW_STATIC
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -9,8 +8,6 @@
 #include "sandsim.hpp"
 #include "input.hpp"
 
-//SDL_Window* window;
-//SDL_Renderer* renderer;
 GLFWwindow* window;
 
 bool game_is_running = false;
@@ -20,10 +17,9 @@ int tps = 60;
 int t = 0;
 
 int window_size[2];
-int mouse_position[2] { 0, 0 };
 
 SandSim sim(200, 120);
-InputManager input;
+InputManager* input = InputManager::getInstance();
 
 int mouse_action = 1;
 
@@ -35,6 +31,9 @@ const int window_margin = 10;
 const int button_size = 50;
 const int button_count = 13;
 const int button_rows = 10;
+
+int camera_position[2] = { -10, -10 };
+float camera_zoom = 1.0;
 
 const char* vertexShaderSource = R"(
 #version 330 core
@@ -56,8 +55,13 @@ uniform isampler2D materialTexture;
 uniform int tile_size;
 uniform vec2 window_size;
 
+uniform ivec2 camera_position;
+uniform float camera_zoom;
+
 int get_material(vec2 coords)
 {
+	if (coords.x < 0.0 || coords.y < 0.0 || coords.x >= window_size.x / tile_size || coords.y >= window_size.y / tile_size)
+		return 0;
 	return texture(materialTexture, coords.yx / window_size.yx * tile_size).r;
 }
 
@@ -89,7 +93,7 @@ vec3 get_material_color(int material, float value)
 
 ivec2 screen_to_game(vec2 coords)
 {
-	return (ivec2(coords.xy) - ivec2(10, 10)) / tile_size;
+	return ivec2( vec2(-window_size.xy / 2.0 + coords.xy) / tile_size / camera_zoom + camera_position.xy);
 }
 
 vec3 first_pass(vec2 screen_coords, float value)
@@ -169,7 +173,7 @@ void initialize_window()
 		return;
 	}
 
-	window_size[0] = sim.x_size * tile_size + window_margin * 2 + (button_size + window_margin) * (((button_count - 1) / button_rows) + 1);
+	window_size[0] = sim.x_size * tile_size + window_margin * 2;// +(button_size + window_margin) * (((button_count - 1) / button_rows) + 1);
 	window_size[1] = sim.y_size * tile_size + window_margin * 2;
 	
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -207,82 +211,11 @@ void cleanup()
 	
 }
 
-void key_callback(GLFWwindow* window_, int key, int scancode, int action, int mods)
-{
-	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
-		glfwSetWindowShouldClose(window_, 1);
-	if (key == GLFW_KEY_GRAVE_ACCENT && action == GLFW_PRESS)
-	{
-		mouse_action = (mouse_action + 1) % button_count;
-		if (mouse_action == 0)
-			mouse_action++;
-	}
-
-	if (key == GLFW_KEY_1 && action == GLFW_PRESS)
-	{
-		mouse_action = 1;
-	}
-
-	if (key == GLFW_KEY_2 && action == GLFW_PRESS)
-	{
-		mouse_action = 2;
-	}
-
-	if (key == GLFW_KEY_3 && action == GLFW_PRESS)
-	{
-		mouse_action = 4;
-	}
-
-	if (key == GLFW_KEY_4 && action == GLFW_PRESS)
-	{
-		mouse_action = 5;
-	}
-
-	if (key == GLFW_KEY_5 && action == GLFW_PRESS)
-	{
-		mouse_action = 6;
-	}
-
-	if (key == GLFW_KEY_6 && action == GLFW_PRESS)
-	{
-		mouse_action = 7;
-	}
-}
-
-static void cursor_position_callback(GLFWwindow* window_, double xpos, double ypos)
-{
-	mouse_position[0] = xpos;
-	mouse_position[1] = ypos;
-}
-
-void on_click(void);
-
-bool clicking = false;
-bool r_clicking = false;
-
-void mouse_button_callback(GLFWwindow* window_, int button, int action, int mods)
-{
-	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
-		clicking = true;
-
-	if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE)
-		clicking = false;
-
-
-	if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
-		r_clicking = true;
-
-	if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_RELEASE)
-		r_clicking = false;
-}
-
 void setup()
 {
-	glfwSetKeyCallback(window, key_callback);
-	glfwSetCursorPosCallback(window, cursor_position_callback);
-	glfwSetMouseButtonCallback(window, mouse_button_callback);
+	input->setup(window);
 
-	input.set_monitering(SDLK_ESCAPE);
+	//input->set_monitering(SDLK_ESCAPE);
 
 	// Compile and link shaders
 	unsigned int vertexShader, fragmentShader;
@@ -338,14 +271,14 @@ void setup()
 
 void screen_to_sim(int x, int y, int output[])
 {
-	output[0] = (x - window_margin) / tile_size;
-	output[1] = (y - window_margin) / tile_size;
+	output[0] = (-window_size[0] / 2.0 + x) / tile_size / camera_zoom + camera_position[0];
+	output[1] = (-window_size[1] / 2.0 + y) / tile_size / camera_zoom + camera_position[1];
 }
 
 void place_tile(int new_tile, int state = 0)
 {
 	int tile[2];
-	screen_to_sim(mouse_position[0], mouse_position[1], tile);
+	screen_to_sim(input->mouse_x, input->mouse_y, tile);
 
 	const int radius = 10;
 
@@ -358,24 +291,88 @@ void place_tile(int new_tile, int state = 0)
 		}
 }
 
+void on_click(void);
+
 void get_input()
 {
-	glfwPollEvents();
+	input->update();
 
-	if (clicking)
+	if (input->mouse_down)
 		on_click();
-	else if (r_clicking)
+	else if (input->right_mouse_down)
 		place_tile(EMPTY);
 
-	input.update();
-}
+	if (input->is_pressed(GLFW_KEY_ESCAPE))
+		glfwSetWindowShouldClose(window, 1);
 
-//	if (input.mouse_down)
-//	{
+	
+	if (input->is_pressed(GLFW_KEY_LEFT))
+	{
+		camera_position[0] -= 3;
+	}
+	if (input->is_pressed(GLFW_KEY_RIGHT))
+	{
+		camera_position[0] += 3;
+	}
+	if (input->is_pressed(GLFW_KEY_UP))
+	{
+		camera_position[1] -= 3;
+	}
+	if (input->is_pressed(GLFW_KEY_DOWN))
+	{
+		camera_position[1] += 3;
+	}
+	if (input->is_pressed(GLFW_KEY_EQUAL))
+	{
+		camera_zoom += 0.01;
+	}
+	if (input->is_pressed(GLFW_KEY_MINUS))
+	{
+		camera_zoom -= 0.01;
+	}
+
+
+	if (input->is_pressed(GLFW_KEY_GRAVE_ACCENT))
+	{
+		mouse_action = (mouse_action + 1) % button_count;
+		if (mouse_action == 0)
+			mouse_action++;
+	}
+
+	if (input->is_pressed(GLFW_KEY_1))
+	{
+		mouse_action = 1;
+	}
+
+	if (input->is_pressed(GLFW_KEY_2))
+	{
+		mouse_action = 2;
+	}
+
+	if (input->is_pressed(GLFW_KEY_3))
+	{
+		mouse_action = 4;
+	}
+
+	if (input->is_pressed(GLFW_KEY_4))
+	{
+		mouse_action = 5;
+	}
+
+	if (input->is_pressed(GLFW_KEY_5))
+	{
+		mouse_action = 6;
+	}
+
+	if (input->is_pressed(GLFW_KEY_6))
+	{
+		mouse_action = 7;
+	}
+}
 
 void on_click()
 {
-	if (mouse_position[0] > window_margin && mouse_position[0] < window_margin + sim.x_size * tile_size && mouse_position[1] > window_margin && mouse_position[1] < window_margin + sim.y_size * tile_size)
+	if (input->mouse_x > window_margin && input->mouse_x < window_margin + sim.x_size * tile_size && input->mouse_y > window_margin && input->mouse_y < window_margin + sim.y_size * tile_size)
 		switch (mouse_action)
 		{
 		case 1:
@@ -409,12 +406,12 @@ void on_click()
 		case 8:
 			for (int x = -5; x < 6; ++x)
 				for (int y = -5; y < 6; ++y)
-					sim.heat_tile(input.mouse_x / sim.tile_size + x, input.mouse_y / sim.tile_size + y, 5);
+					sim.heat_tile(input->mouse_x / sim.tile_size + x, input->mouse_y / sim.tile_size + y, 5);
 			break;
 		case 9:
 			for (int x = -5; x < 6; ++x)
 				for (int y = -5; y < 6; ++y)
-					sim.heat_tile(input.mouse_x / sim.tile_size + x, input.mouse_y / sim.tile_size + y, -5);
+					sim.heat_tile(input->mouse_x / sim.tile_size + x, input->mouse_y / sim.tile_size + y, -5);
 			break;
 			*/
 
@@ -429,11 +426,11 @@ void on_click()
 			break;
 				
 		}
-	else// if (input.mouse_x > window_margin * 2 + sim.x_size * sim.tile_size && input.mouse_x < window_margin * 2 + sim.x_size * sim.tile_size + button_size)
+	else// if (input->mouse_x > window_margin * 2 + sim.x_size * sim.tile_size && input->mouse_x < window_margin * 2 + sim.x_size * sim.tile_size + button_size)
 	{
 		for (int i = 0; i < button_count; ++i)
-			if (input.mouse_y > window_margin + (window_margin + button_size) * (i % button_rows) && input.mouse_y < window_margin + (window_margin + button_size) * (i % button_rows) + button_size
-				&& input.mouse_x > window_margin * 2 + sim.x_size * tile_size + (button_size + window_margin) * (i / button_rows) && input.mouse_x < window_margin * 2 + sim.x_size * tile_size + (button_size + window_margin) * (i / button_rows) + button_size)
+			if (input->mouse_y > window_margin + (window_margin + button_size) * (i % button_rows) && input->mouse_y < window_margin + (window_margin + button_size) * (i % button_rows) + button_size
+				&& input->mouse_x > window_margin * 2 + sim.x_size * tile_size + (button_size + window_margin) * (i / button_rows) && input->mouse_x < window_margin * 2 + sim.x_size * tile_size + (button_size + window_margin) * (i / button_rows) + button_size)
 			{
 				if (i == 0)
 					sim.clear();
@@ -444,27 +441,19 @@ void on_click()
 	}
 
 }
-	//else if (input.right_mouse_down)
-	//{
-	//	place_tile(EMPTY);
-	//}
-	
-
-	//if (input.is_pressed(SDLK_ESCAPE))
-	//	game_is_running = false;
 
 void update()
 {
 	++t;
 
-	int time_to_wait = (1000.0f / target_fps) - (SDL_GetTicks() - time_since_last_frame);
+	//int time_to_wait = (1000.0f / target_fps) - (SDL_GetTicks() - time_since_last_frame);
 
-	if (time_to_wait > 0 && time_to_wait <= (1000.0f / target_fps))
-		SDL_Delay(time_to_wait);
+	//if (time_to_wait > 0 && time_to_wait <= (1000.0f / target_fps))
+	//	SDL_Delay(time_to_wait);
 
 
-	float delta = (SDL_GetTicks() - time_since_last_frame) / 1000.0f;
-	time_since_last_frame = SDL_GetTicks();
+	//float delta = (SDL_GetTicks() - time_since_last_frame) / 1000.0f;
+	//time_since_last_frame = SDL_GetTicks();
 
 	glfwGetWindowSize(window, &window_size[0], &window_size[1]);
 
@@ -701,7 +690,9 @@ void draw_sim2()
 	
 	float fl_winsize[2] = { float(sim.x_size * tile_size), float(sim.y_size * tile_size) };
 	glUniform2fv(glGetUniformLocation(shaderProgram, "window_size"), 1, fl_winsize);
+	glUniform2iv(glGetUniformLocation(shaderProgram, "camera_position"), 1, camera_position);
 	glUniform1i(glGetUniformLocation(shaderProgram, "tile_size"), tile_size);
+	glUniform1f(glGetUniformLocation(shaderProgram, "camera_zoom"), camera_zoom);
 
 	////////////////////////////////////////////////////////////////////////
 

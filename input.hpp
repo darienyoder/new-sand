@@ -1,29 +1,52 @@
-#include <SDL.h>
+#ifndef INPUT_MANAGER
+#define INPUT_MANAGER
+
+#define GLEW_STATIC
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+
 #include <list>
 
 class InputManager
 {
 public:
-	InputManager();
 
-	void set_monitering(SDL_KeyCode);
+	InputManager(const InputManager& obj) = delete;
 
+	static InputManager* getInstance() {
+		if (instancePtr == nullptr)
+		{
+			if (instancePtr == nullptr) {
+				instancePtr = new InputManager();
+			}
+		}
+		return instancePtr;
+	}
+
+	void setup(GLFWwindow* window);
 	void update();
 
-	bool is_pressed(SDL_KeyCode);
-	bool is_just_pressed(SDL_KeyCode);
-	bool is_just_released(SDL_KeyCode);
+	bool is_pressed(int key);
+	bool is_just_pressed(int key);
+	bool is_just_released(int key);
+
+	void on_key_callback(GLFWwindow* window_, int key, int scancode, int action, int mods);
+	void on_cursor_position_callback(GLFWwindow* window_, double xpos, double ypos);
+	void on_mouse_button_callback(GLFWwindow* window_, int button, int action, int mods);
 
 	int mouse_x = 0, mouse_y = 0;
 	bool mouse_down = false, right_mouse_down = false;
 	bool just_clicked = false, just_right_clicked = false;
 
-	bool clicked_x = false;
-
 private:
-	std::list<SDL_KeyCode> keys_monitering;
+	InputManager() {};
+	static InputManager* instancePtr;
 
-	std::list<SDL_KeyCode> keys_pressed;
-	std::list<SDL_KeyCode> keys_just_pressed;
-	std::list<SDL_KeyCode> keys_just_released;
+	std::list<int> keys_monitering;
+
+	std::list<int> keys_pressed;
+	std::list<int> keys_just_pressed;
+	std::list<int> keys_just_released;
 };
+
+#endif
