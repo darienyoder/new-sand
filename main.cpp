@@ -87,17 +87,17 @@ vec3 get_material_color(int material, float value)
 	return vec3(1.0, 0.2, 1.0);
 }
 
-void main() {
+ivec2 screen_to_game(vec2 coords)
+{
+	return (ivec2(coords.xy) - ivec2(10, 10)) / tile_size;
+}
 
-	ivec2 coords = (ivec2(gl_FragCoord.xy) - ivec2(10, 10)) / tile_size;
-
+vec3 first_pass(vec2 screen_coords, float value)
+{
+	vec2 coords = screen_to_game(screen_coords.xy);
 	int material = get_material(coords);
-	
-	float value = ( int(pow(coords.x % 50 + 50, (coords.y % 20 + 20) * 0.1)) % 100) / 100.0;
-	value = value * 0.25 + 0.75;
-	
-	color.rgb = get_material_color(material, value);
-	
+	vec3 clr = get_material_color(material, value);
+
 	for (int x = -5; x < 6; x++)
 	for (int y = -5; y < 6; y++)
 	{
@@ -105,12 +105,56 @@ void main() {
 		{
 			int neighbor = get_material(coords + vec2(x, y));
 			if ((material == 0 || material == 4) && neighbor == 4)
-				color.rgb += vec3(0.01);
+				clr += vec3(0.01);
+
+			if (neighbor == 7)
+				clr += vec3(0.02, 0.0, 0.0);
+
 			if (material == 2 && neighbor == 0 && x == 0 && y == -1)
-				color.rbg = vec3(1.0, 1.0, 1.0);
+				clr = vec3(1.0, 1.0, 1.0);
 		}
 	}
+	return clr;
+}
 
+void main()
+{
+
+	ivec2 coords = screen_to_game(gl_FragCoord.xy);
+
+	int material = get_material(coords);
+
+	float value = ( int(pow(int(gl_FragCoord.x / tile_size * 2) % 50 + 50, (int(gl_FragCoord.y / tile_size * 2) % 20 + 20) * 0.1)) % 100) / 100.0;
+	value = value * 0.25 + 0.75;
+
+	color.rgb = first_pass(gl_FragCoord.xy, value);
+	return;
+
+	// Second Pass
+	
+	bool surrounded = (
+		get_material(coords + vec2(1, 0)) == material
+		&& get_material(coords + vec2(-1, 0)) == material
+		&& get_material(coords + vec2(0, 1)) == material
+		&& get_material(coords + vec2(0, -1)) == material
+		&& (material != 2 || get_material(coords + vec2(0, -2)) == material)
+	);
+	
+	if (surrounded)
+		color.rgb = first_pass(gl_FragCoord.xy, value);
+	else
+	{
+		int count = 0;
+		float hardness = (material == 1) ? 2.0 : 4.0;
+		for (int x = -2; x < 3; x++)
+		for (int y = -2; y < 3; y++)
+		//	if (x*x + y*y <= 4)
+		{
+			color.rgb += first_pass(gl_FragCoord.xy + vec2(x, y) * tile_size / hardness, value);
+			count++;
+		}
+		color.rgb /= count;
+	}
 }
 )";
 
@@ -172,6 +216,36 @@ void key_callback(GLFWwindow* window_, int key, int scancode, int action, int mo
 		mouse_action = (mouse_action + 1) % button_count;
 		if (mouse_action == 0)
 			mouse_action++;
+	}
+
+	if (key == GLFW_KEY_1 && action == GLFW_PRESS)
+	{
+		mouse_action = 1;
+	}
+
+	if (key == GLFW_KEY_2 && action == GLFW_PRESS)
+	{
+		mouse_action = 2;
+	}
+
+	if (key == GLFW_KEY_3 && action == GLFW_PRESS)
+	{
+		mouse_action = 4;
+	}
+
+	if (key == GLFW_KEY_4 && action == GLFW_PRESS)
+	{
+		mouse_action = 5;
+	}
+
+	if (key == GLFW_KEY_5 && action == GLFW_PRESS)
+	{
+		mouse_action = 6;
+	}
+
+	if (key == GLFW_KEY_6 && action == GLFW_PRESS)
+	{
+		mouse_action = 7;
 	}
 }
 

@@ -1,6 +1,6 @@
 ﻿  main.cpp
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(180,22): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(181,22): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(386,19): warning C4244: 'initializing': conversion from 'float' to 'int', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(393,38): warning C4244: '=': conversion from 'Uint32' to 'float', possible loss of data
+C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(254,22): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(255,22): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(460,19): warning C4244: 'initializing': conversion from 'float' to 'int', possible loss of data
+C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(467,38): warning C4244: '=': conversion from 'Uint32' to 'float', possible loss of data
   new-sand.vcxproj -> C:\Users\Darien\source\repos\new-sand\x64\Debug\new-sand.exe

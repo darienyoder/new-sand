@@ -130,7 +130,7 @@ public:
 	Lava()
 	{
 		spread = 1;
-		density = 2500;
+		density = 1300;
 	}
 	bool tick();
 };
