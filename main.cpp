@@ -2,8 +2,10 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
-#include <iostream>
+#include <chrono>
 #include <math.h>
+
+#include <iostream>
 
 #include "sandsim.hpp"
 #include "input.hpp"
@@ -14,7 +16,8 @@ bool game_is_running = false;
 float time_since_last_frame = 0.0;
 int target_fps = 60;
 int tps = 60;
-int t = 0;
+auto t = std::chrono::high_resolution_clock::now();
+auto last_sim_update = t;
 
 int window_size[2];
 
@@ -32,7 +35,7 @@ const int button_size = 50;
 const int button_count = 13;
 const int button_rows = 10;
 
-int camera_position[2] = { -10, -10 };
+float camera_position[2] = { -10, -10 };
 float camera_zoom = 1.0;
 
 const char* vertexShaderSource = R"(
@@ -55,18 +58,20 @@ uniform isampler2D materialTexture;
 uniform int tile_size;
 uniform vec2 window_size;
 
-uniform ivec2 camera_position;
+uniform vec2 camera_position;
 uniform float camera_zoom;
 
 int get_material(vec2 coords)
 {
 	if (coords.x < 0.0 || coords.y < 0.0 || coords.x >= window_size.x / tile_size || coords.y >= window_size.y / tile_size)
-		return 0;
+		return -1;
 	return texture(materialTexture, coords.yx / window_size.yx * tile_size).r;
 }
 
 vec3 get_material_color(int material, float value)
 {
+	if (material == -1)
+		return vec3(0.1);
 	if (material == 0)
 		return vec3(0.0);
 	else if (material == 1) // SAND
@@ -87,11 +92,17 @@ vec3 get_material_color(int material, float value)
 		return vec3(0.6, 0.4, 0.1);
 	else if (material == 9) // ACID
 		return vec3(0.4, 0.7, 0.0);
+	else if (material == 10) // FIRE
+		return vec3(0.9, 0.4, 0.1);
+	else if (material == 11) // SMOKE
+		return vec3(0.3, 0.3, 0.3) * 0.0;
+	else if (material == 12) // WOOD
+		return vec3(0.427, 0.275, 0.012) * value;
 
 	return vec3(1.0, 0.2, 1.0);
 }
 
-ivec2 screen_to_game(vec2 coords)
+vec2 screen_to_game(vec2 coords)
 {
 	return ivec2( vec2(-window_size.xy / 2.0 + coords.xy) / tile_size / camera_zoom + camera_position.xy);
 }
@@ -102,17 +113,31 @@ vec3 first_pass(vec2 screen_coords, float value)
 	int material = get_material(coords);
 	vec3 clr = get_material_color(material, value);
 
+	if (material == -1)
+		return clr;
+
 	for (int x = -5; x < 6; x++)
 	for (int y = -5; y < 6; y++)
 	{
 		if (x*x + y*y <= 25)
 		{
 			int neighbor = get_material(coords + vec2(x, y));
-			if ((material == 0 || material == 4) && neighbor == 4)
-				clr += vec3(0.01);
+			
+			float scale = 0.0; // Steam
+			if ((material == 0 || material == 4 || material == 11) && neighbor == 4)
+				scale += 0.015;
+			clr = vec3(0.9) * scale + clr * (1.0 - scale);
 
-			if (neighbor == 7)
+			scale = 0.0; // Smoke
+			if ((true || material == 0 || material == 11 || material == 4) && neighbor == 11)
+				scale += 0.03;
+			clr = vec3(0.3) * scale + clr * (1.0 - scale);
+
+			if (neighbor == 7) // Lava
 				clr += vec3(0.02, 0.0, 0.0);
+
+			if (neighbor == 10) // Fire
+				clr += vec3(0.01, 0.0, 0.0);// * (1.0 - (x*x + y*y) / 25.0);
 
 			if (material == 2 && neighbor == 0 && x == 0 && y == -1)
 				clr = vec3(1.0, 1.0, 1.0);
@@ -124,11 +149,11 @@ vec3 first_pass(vec2 screen_coords, float value)
 void main()
 {
 
-	ivec2 coords = screen_to_game(gl_FragCoord.xy);
+	vec2 coords = screen_to_game(gl_FragCoord.xy);
 
 	int material = get_material(coords);
 
-	float value = ( int(pow(int(gl_FragCoord.x / tile_size * 2) % 50 + 50, (int(gl_FragCoord.y / tile_size * 2) % 20 + 20) * 0.1)) % 100) / 100.0;
+	float value = ( int(pow(int(coords.x) % 50 + 50, (int(coords.y) % 20 + 20) * 0.1)) % 100) / 100.0;
 	value = value * 0.25 + 0.75;
 
 	color.rgb = first_pass(gl_FragCoord.xy, value);
@@ -215,7 +240,9 @@ void setup()
 {
 	input->setup(window);
 
-	//input->set_monitering(SDLK_ESCAPE);
+	camera_position[0] = sim.x_size * 0.5;
+	camera_position[1] = sim.y_size * 0.5;
+	camera_zoom = 0.95;
 
 	// Compile and link shaders
 	unsigned int vertexShader, fragmentShader;
@@ -245,9 +272,9 @@ void setup()
 		-1.0f + float(window_margin) / window_size[0] * 2.0f, -1.0f + float(window_margin) / window_size[1] * 2.0f, 0.0f   // top left 
 	};
 
-	unsigned int indices[] = {  // note that we start from 0!
-		0, 1, 3,  // first Triangle
-		1, 2, 3   // second Triangle
+	unsigned int indices[] = {
+		0, 1, 3,
+		1, 2, 3
 	};
 	unsigned int EBO;
 	glGenVertexArrays(1, &VAO);
@@ -280,7 +307,7 @@ void place_tile(int new_tile, int state = 0)
 	int tile[2];
 	screen_to_sim(input->mouse_x, input->mouse_y, tile);
 
-	const int radius = 10;
+	const int radius = 5;
 
 	for (int x = -radius; x < radius; x++)
 	for (int y = -radius; y < radius; y++)
@@ -308,27 +335,27 @@ void get_input()
 	
 	if (input->is_pressed(GLFW_KEY_LEFT))
 	{
-		camera_position[0] -= 3;
+		camera_position[0] -= 3 / camera_zoom;
 	}
 	if (input->is_pressed(GLFW_KEY_RIGHT))
 	{
-		camera_position[0] += 3;
+		camera_position[0] += 3 / camera_zoom;
 	}
 	if (input->is_pressed(GLFW_KEY_UP))
 	{
-		camera_position[1] -= 3;
+		camera_position[1] -= 3 / camera_zoom;
 	}
 	if (input->is_pressed(GLFW_KEY_DOWN))
 	{
-		camera_position[1] += 3;
+		camera_position[1] += 3 / camera_zoom;
 	}
 	if (input->is_pressed(GLFW_KEY_EQUAL))
 	{
-		camera_zoom += 0.01;
+		camera_zoom *= 1.01;
 	}
 	if (input->is_pressed(GLFW_KEY_MINUS))
 	{
-		camera_zoom -= 0.01;
+		camera_zoom /= 1.01;
 	}
 
 
@@ -367,6 +394,26 @@ void get_input()
 	if (input->is_pressed(GLFW_KEY_6))
 	{
 		mouse_action = 7;
+	}
+
+	if (input->is_pressed(GLFW_KEY_7))
+	{
+		mouse_action = 10;
+	}
+
+	if (input->is_pressed(GLFW_KEY_8))
+	{
+		mouse_action = 11;
+	}
+
+	if (input->is_pressed(GLFW_KEY_9))
+	{
+		mouse_action = 12;
+	}
+
+	if (input->is_pressed(GLFW_KEY_0))
+	{
+		mouse_action = 13;
 	}
 }
 
@@ -424,9 +471,18 @@ void on_click()
 		case 11:
 			place_tile(ACID);
 			break;
+
+		case 12:
+			place_tile(FIRE);
+			break;
+
+		case 13:
+			place_tile(WOOD);
+			break;
 				
 		}
-	else// if (input->mouse_x > window_margin * 2 + sim.x_size * sim.tile_size && input->mouse_x < window_margin * 2 + sim.x_size * sim.tile_size + button_size)
+	return;
+	// else if (input->mouse_x > window_margin * 2 + sim.x_size * sim.tile_size && input->mouse_x < window_margin * 2 + sim.x_size * sim.tile_size + button_size)
 	{
 		for (int i = 0; i < button_count; ++i)
 			if (input->mouse_y > window_margin + (window_margin + button_size) * (i % button_rows) && input->mouse_y < window_margin + (window_margin + button_size) * (i % button_rows) + button_size
@@ -442,23 +498,22 @@ void on_click()
 
 }
 
+float compare_times(std::chrono::high_resolution_clock::time_point t1, std::chrono::high_resolution_clock::time_point t2)
+{
+	return std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count() / 1000000.0;
+}
+
 void update()
 {
-	++t;
-
-	//int time_to_wait = (1000.0f / target_fps) - (SDL_GetTicks() - time_since_last_frame);
-
-	//if (time_to_wait > 0 && time_to_wait <= (1000.0f / target_fps))
-	//	SDL_Delay(time_to_wait);
-
-
-	//float delta = (SDL_GetTicks() - time_since_last_frame) / 1000.0f;
-	//time_since_last_frame = SDL_GetTicks();
+	auto new_time = std::chrono::high_resolution_clock::now();
+	float delta = compare_times(t, new_time);
+	t = new_time;
 
 	glfwGetWindowSize(window, &window_size[0], &window_size[1]);
 
-	if (run_sim && t % (target_fps / tps) == 0)
+	if (run_sim && compare_times(last_sim_update, new_time) > 1.0 / tps)
 	{
+		last_sim_update = new_time;
 		sim.update();
 	}
 }
@@ -530,138 +585,13 @@ void draw_buttons()
 	*/
 }
 
-/*
-void draw_sim()
-{
-
-	// Black background
-	SDL_Rect background = { 10, 10, tile_size * sim.x_size, tile_size * sim.y_size };
-	SDL_SetRenderDrawColor(renderer, 00, 00, 00, 255);
-	SDL_RenderFillRect(renderer, &background);
-
-	int r = 0, g = 0, b = 0;
-	float value = 1.0f;
-
-	for (int x = 0; x < sim.x_size; ++x)
-	{
-		for (int y = 0; y < sim.y_size; ++y)
-		{
-			if (sim.tiles[x][y]->material == EMPTY)
-				continue;
-
-			//r = sim.tiles[x][y]->r;
-			//g = sim.tiles[x][y]->g;
-			//b = sim.tiles[x][y]->b;
-
-			float value = (((x + 12) * (x + 12) + x^y + (y + 35) * (y + 35) * 2) % 100) / 100.0;
-			value = value * 0.25 + 0.75;
-
-			switch (sim.tiles[x][y]->material)
-			{
-			case EMPTY:
-				r = 255;
-				g = 255;
-				b = 255;
-				break;
-
-			case SAND:
-				r = 255 * value; // 1.
-				g = 230 * value; // .9
-				b = 128 * value; // .5
-				break;
-
-			case WATER:
-				if (!sim.is_tile_empty(x, y + 1) && ((sim.is_tile_empty(x + 1, y) && sim.is_tile_empty(x - 1, y)) || (sim.is_tile_empty(x + 2, y) && sim.is_tile_empty(x - 2, y))))
-					continue;
-
-				r = 0;
-				g = 50;
-				b = 255;
-				// White border
-				if (sim.get_tile(x, y - 1).material == EMPTY && sim.get_tile(x, y + 1).material != EMPTY)
-				{
-					r = 200;
-					g = 200;
-					b = 255;
-				}
-				break;
-
-			case ICE:
-				r = 50;
-				g = 150;
-				b = 255;
-
-				if (
-					//(x + y) % 2 == 0 && 
-					x % 5 == y % 5
-					&& ((x / 7) + (y / 7)) % 2 == 0
-					)
-				{
-					r = 255;
-					g = 255;
-					b = 255;
-				}
-
-				break;
-
-			case STEAM:
-				r = 255 * (value * 0.5 + 0.5);
-				g = 255 * (value * 0.5 + 0.5);
-				b = 255 * (value * 0.5 + 0.5);
-				break;
-
-			case DIRT:
-				r = 128 * value;
-				g = 64 * value;
-				b = 0;
-				break;
-
-			case STONE:
-				r = 50 * value;
-				g = 50 * value;
-				b = 50 * value;
-				break;
-
-			case LAVA:
-				r = 252 * value;
-				g = 157 * value;
-				b = 47 * value;
-				break;
-
-			case OIL:
-				r = 155;
-				g = 118;
-				b = 17;
-				break;
-
-			case ACID:
-				r = 50;
-				g = 175;
-				b = 0;
-				break;
-			}
-			
-
-			SDL_Rect box = { x * tile_size + 10, y * tile_size + 10, tile_size, tile_size };
-			SDL_SetRenderDrawColor(renderer, r * 1, g * 1, b * 1, 255);
-			SDL_RenderFillRect(renderer, &box);
-		}
-	}
-}
-*/
-
 void draw_sim2()
 {
 	auto materialMatrix = sim.get_texture_data();
 
-	std::vector<int> flatData;
-	for (const auto& row : materialMatrix) {
-		flatData.insert(flatData.end(), row.begin(), row.end());
-	}
-
-	GLuint textureID;
-	glGenTextures(1, &textureID);
-	glBindTexture(GL_TEXTURE_2D, textureID);
+	//GLuint textureID;
+	//glGenTextures(1, &textureID);
+	glBindTexture(GL_TEXTURE_2D, 0);
 
 	// Set texture parameters
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -670,7 +600,7 @@ void draw_sim2()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	// Upload the texture data
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_R32I, sim.y_size, sim.x_size, 0, GL_RED_INTEGER, GL_INT, flatData.data());
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32I, sim.y_size, sim.x_size, 0, GL_RG_INTEGER, GL_INT, materialMatrix.data());
 
 	// Generate mipmaps (optional, depending on your use case)
 	glGenerateMipmap(GL_TEXTURE_2D);
@@ -683,14 +613,14 @@ void draw_sim2()
 
 	// Bind the texture to a texture unit
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, textureID);
+	//glBindTexture(GL_TEXTURE_2D, textureID);
 
 	// Set the sampler uniform in the shader
 	glUniform1i(glGetUniformLocation(shaderProgram, "materialTexture"), 0);
 	
 	float fl_winsize[2] = { float(sim.x_size * tile_size), float(sim.y_size * tile_size) };
 	glUniform2fv(glGetUniformLocation(shaderProgram, "window_size"), 1, fl_winsize);
-	glUniform2iv(glGetUniformLocation(shaderProgram, "camera_position"), 1, camera_position);
+	glUniform2fv(glGetUniformLocation(shaderProgram, "camera_position"), 1, camera_position);
 	glUniform1i(glGetUniformLocation(shaderProgram, "tile_size"), tile_size);
 	glUniform1f(glGetUniformLocation(shaderProgram, "camera_zoom"), camera_zoom);
 
@@ -701,21 +631,15 @@ void draw_sim2()
 	glBindVertexArray(VAO); // Bind the VAO
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 	glBindVertexArray(0); // Unbind the VAO
+
+	materialMatrix.~vector();
+	//textureID.~GLuint();
 }
 
 void draw()
 {
 	glClearColor(0.3f, 0.3f, 0.3f, 1.0f); // Set clear color to a dark teal
 	glClear(GL_COLOR_BUFFER_BIT);
-
-	/*
-	int size[2];
-	SDL_GetWindowSize(window, &size[0], &size[1]);
-	if ((float)size[0] / (float)size[1] < (float)sim.x_size / (float)sim.y_size)
-		tile_size = size[0] / sim.x_size;
-	else
-		tile_size = size[1] / sim.y_size;
-	*/
 
 	draw_sim2();
 

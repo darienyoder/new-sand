@@ -22,7 +22,7 @@ public:
 	SandSim(int width, int height);
 	~SandSim() {};
 
-	bool in_bounds(int x, int y) { return x > -1 && x < x_size&& y > -1 && y < y_size; };
+	bool in_bounds(int x, int y) { return x > -1 && x < x_size && y > -1 && y < y_size; };
 
 	Particle& get_tile(int x, int y);
 	void set_tile(int x, int y, int new_tile);
@@ -40,10 +40,10 @@ public:
 
 	void clear();
 
-	std::vector<std::vector<int>> get_texture_data();
+	std::vector<int> get_texture_data();
 
 	int x_size = 0, y_size = 0;
-	int time;
+	int time = 0;
 
 	Particle*** tiles;
 

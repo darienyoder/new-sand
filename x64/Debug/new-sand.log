@@ -1,6 +1,4 @@
-﻿  main.cpp
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(274,68): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(275,68): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(327,22): warning C4305: '+=': truncation from 'double' to 'float'
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(331,22): warning C4305: '-=': truncation from 'double' to 'float'
+﻿  sandsim.cpp
+C:\Users\Darien\source\repos\new-sand\new-sand\particle.hpp(172,1): warning C4250: 'Wood': inherits 'Flammable::Flammable::tick' via dominance
+C:\Users\Darien\source\repos\new-sand\new-sand\particle.hpp(155,7): message : see declaration of 'Flammable::tick'
   new-sand.vcxproj -> C:\Users\Darien\source\repos\new-sand\x64\Debug\new-sand.exe

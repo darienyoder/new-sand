@@ -17,6 +17,9 @@ enum {
 	LAVA,
 	OIL,
 	ACID,
+	FIRE,
+	SMOKE,
+	WOOD,
 };
 
 class Particle
@@ -24,7 +27,7 @@ class Particle
 public:
 	Particle() { material = EMPTY; x = 0; y = 0; };
 	Particle(int m, SandSim& s) { material = m; sim = &s; };
-	~Particle() {};
+	virtual ~Particle() {};
 
 	void swap(int x_, int y_);
 	virtual void move_to(int x_, int y_) { swap(x_, y_); };
@@ -45,9 +48,9 @@ public:
 	SandSim* sim = 0;
 };
 
-class Air : public Particle {};
+class Air : virtual public Particle {};
 
-class Powder : public Particle
+class Powder : virtual public Particle
 {
 public:
 	int density = 1001;
@@ -55,13 +58,13 @@ public:
 	int get_move_speed(int x_, int y_);
 };
 
-class Solid : public Particle
+class Solid : virtual public Particle
 {
 public:
 	virtual void melt() {};
 };
 
-class Liquid : public Particle
+class Liquid : virtual public Particle
 {
 public:
 	int direction = std::rand() % 2 ? -1 : 1;
@@ -75,7 +78,7 @@ public:
 	virtual void evaporate() {};
 };
 
-class Gas : public Particle
+class Gas : virtual public Particle
 {
 public:
 	bool tick();
@@ -110,6 +113,16 @@ public:
 	void condense() { set_tile(x, y, WATER); }
 };
 
+class Fire : public Gas
+{
+	bool tick();
+};
+
+class Smoke : public Gas
+{
+
+};
+
 class Dirt : public Powder
 {
 public:
@@ -135,13 +148,27 @@ public:
 	bool tick();
 };
 
-class Oil : public Liquid
+class Flammable : virtual public Particle
+{
+public:
+	bool burning = false;
+	bool tick();
+};
+
+class Oil : public Liquid, public Flammable
 {
 public:
 	Oil()
 	{
 		density = 800;
 	}
+	bool tick();
+};
+
+class Wood : public Solid, public Flammable
+{
+public:
+	
 };
 
 class Acid : public Liquid

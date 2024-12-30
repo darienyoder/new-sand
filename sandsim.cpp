@@ -3,8 +3,6 @@
 
 SandSim::SandSim(int width, int height)
 {
-	//texture = new int[x_size][y_size];
-
 	tiles = new Particle** [width];
 	for (int i = 0; i < width; ++i)
 	{
@@ -133,6 +131,15 @@ Particle* SandSim::create_element(int material)
 	case ACID:
 		ptr = new Acid;
 		break;
+	case FIRE:
+		ptr = new Fire;
+		break;
+	case SMOKE:
+		ptr = new Smoke;
+		break;
+	case WOOD:
+		ptr = new Wood;
+		break;
 	default:
 		ptr = new Air;
 		break;
@@ -177,10 +184,11 @@ void SandSim::simulate_tile(int x, int y)
 	if (tiles[x][y]->last_tick < time)
 	{
 		tiles[x][y]->last_tick = time;
+		Particle* tile = tiles[x][y];
 		if (tiles[x][y]->tick())
 			make_active(x, y);
-		if (tiles[x][y]->about_to_delete)
-			set_tile(x, y, EMPTY);
+		if (tiles[tile->x][tile->y]->about_to_delete)
+			set_tile(tile->x, tile->y, EMPTY);
 	}
 }
 
@@ -202,24 +210,18 @@ void SandSim::make_active(int tile_x, int tile_y)
 		chunks[tile_x / chunk_size][tile_y / chunk_size + 1].active_next = true;
 }
 
-std::vector<std::vector<int>> SandSim::get_texture_data()
+std::vector<int> SandSim::get_texture_data()
 {
-	std::vector<std::vector<int>> materialMatrix;
+	std::vector<int> materialMatrix;
 
-	// Resize the materialMatrix to match the dimensions of particleMatrix
-	materialMatrix.resize(x_size);
-	for (size_t i = 0; i < x_size; ++i) {
-		materialMatrix[i].resize(y_size);
-		for (size_t j = 0; j < y_size; ++j) {
-			// Check if the pointer is not null before accessing
-			if (tiles[i][j] != nullptr) {
-				materialMatrix[i][j] = tiles[i][j]->material;
-			}
-			else {
-				materialMatrix[i][j] = 0; // or some default value for null particles
-			}
+	materialMatrix.resize(x_size * y_size * 2);
+	for (size_t i = 0; i < x_size; ++i)
+	{
+		for (size_t j = 0; j < y_size; ++j)
+		{
+			materialMatrix[i * y_size * 2 + j * 2] = tiles[i][j]->material;
+			materialMatrix[i * y_size * 2 + j * 2 + 1] = 0;
 		}
 	}
-
 	return materialMatrix;
 }

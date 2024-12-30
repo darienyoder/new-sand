@@ -128,6 +128,12 @@ bool Liquid::can_move_through(int x_, int y_)
 
 bool Gas::tick()
 {
+	if (y == 0)
+	{
+		remove();
+		return true;
+	}
+
 	// Straight up
 	if (sim->is_tile_empty(x, y - 1) && std::rand() % 3 == 0)
 	{
@@ -230,5 +236,60 @@ bool Lava::tick()
 		else if (Solid* solid = dynamic_cast<Solid*>(&sim->get_tile(x + x_, y + y_)))
 			solid->melt();
 	}
+	return true;
+}
+
+bool Flammable::tick()
+{
+	for (int x_ = -1; x_ < 2; x_++)
+		for (int y_ = -1; y_ < 2; y_++)
+			if (std::rand() % 4 == 0 && sim->get_tile(x + x_, y + y_).material == FIRE || sim->get_tile(x + x_, y + y_).material == LAVA)
+			{
+				burning = true;
+				break;
+			}
+	if (burning)
+	{
+		bool covered = true;
+		for (int x_ = -1; x_ < 2; x_++)
+			for (int y_ = -1; y_ < 2; y_++)
+				if (sim->is_tile_empty(x + x_, y + y_))
+				{
+					covered = false;
+					sim->set_tile(x + x_, y + y_, FIRE);
+				}
+		burning = !covered;
+
+		if (burning && std::rand() % 100 == 0)
+			remove();
+
+		return true;
+	}
+	return false;
+}
+
+bool Oil::tick()
+{
+	bool liq = Liquid::tick();
+	return Flammable::tick() && liq;
+}
+
+bool Fire::tick()
+{
+	Gas::tick();
+
+	bool covered = true;
+	for (int x_ = -1; x_ < 2; x_++)
+		for (int y_ = -1; y_ < 2; y_++)
+			if (sim->is_tile_empty(x + x_, y + y_))
+			{
+				covered = false;
+				if (std::rand() % 64 == 0)
+					sim->set_tile(x + x_, y + y_, SMOKE);
+			}
+
+	if (covered || std::rand() % 5 == 0)
+		remove();
+
 	return true;
 }
