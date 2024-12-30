@@ -20,6 +20,8 @@ enum {
 	FIRE,
 	SMOKE,
 	WOOD,
+	BATTERY,
+	WIRE,
 };
 
 class Particle
