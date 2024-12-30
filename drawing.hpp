@@ -25,16 +25,27 @@ public:
 		return instancePtr;
 	}
 
-	void initialize_shaders();
-
 	unsigned int compile_shader(unsigned int type, const char* source);
 	unsigned int create_shader(const char* fragment, const char* vertex);
 
 	void draw_rect(float x, float y, float width, float height, float r, float g, float b, unsigned int VAO);
 
+
+	GLFWwindow* window;
+
+	struct v2 {
+		int x = 0;
+		int y = 0;
+	};
+
+	v2 size;
+
 private:
-	Canvas() {};
+	Canvas();
 	static Canvas* instancePtr;
+
+	void initialize_window();
+	void initialize_shaders();
 };
 
 #endif;

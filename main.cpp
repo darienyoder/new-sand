@@ -7,8 +7,6 @@
 #include "sandsim.hpp"
 #include "input.hpp"
 
-GLFWwindow* window;
-
 bool game_is_running = false;
 float time_since_last_frame = 0.0;
 int target_fps = 60;
@@ -16,11 +14,9 @@ int tps = 60;
 auto t = std::chrono::high_resolution_clock::now();
 auto last_sim_update = t;
 
-int window_size[2];
-
 SandSim sim(200, 120);
 InputManager* input = InputManager::getInstance();
-Canvas* canvas = Canvas::getInstance();
+Canvas* canvas;
 
 int mouse_action = 1;
 
@@ -29,56 +25,14 @@ bool run_sim = true;
 int tile_size = 8;
 
 const int window_margin = 10;
-const int button_size = 50;
+const int button_size = 70;
 const int button_count = 13;
-const int button_rows = 10;
+int button_rows = 10;
 
 float camera_position[2] = { -10, -10 };
 float camera_zoom = 1.0;
 
-unsigned int shaderProgram;
 unsigned int VAO, VBO;
-
-void initialize_window()
-{
-	// Initialize GLFW
-	if (!glfwInit()) {
-		std::cerr << "Failed to initialize GLFW" << std::endl;
-		return;
-	}
-
-	window_size[0] = sim.x_size * tile_size + window_margin * 2 + (button_size + window_margin) * (((button_count - 1) / button_rows) + 1);
-	window_size[1] = sim.y_size * tile_size + window_margin * 2;
-	
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-	// Create a windowed mode window and its OpenGL context
-	window = glfwCreateWindow(
-		window_size[0],
-		window_size[1],
-		"Sand",
-		nullptr,
-		nullptr
-	);
-
-	if (!window) {
-		std::cerr << "Failed to create GLFW window" << std::endl;
-		glfwTerminate();
-		return;
-	}
-	glfwMakeContextCurrent(window);
-
-	// Initialize GLEW
-	glewExperimental = GL_TRUE; // Needed for core profile
-	if (glewInit() != GLEW_OK) {
-		std::cerr << "Failed to initialize GLEW" << std::endl;
-		return;
-	}
-
-	game_is_running = true;
-}
 
 void cleanup()
 {
@@ -87,21 +41,19 @@ void cleanup()
 
 void setup()
 {
-	input->setup(window);
+	canvas = Canvas::getInstance();
 
-	canvas->initialize_shaders();
+	input->setup(canvas->window);
 
 	camera_position[0] = sim.x_size * 0.5;
 	camera_position[1] = sim.y_size * 0.5;
 	camera_zoom = 0.95;
-
-	
 }
 
 void screen_to_sim(int x, int y, int output[])
 {
-	output[0] = (-window_size[0] / 2.0 + x) / tile_size / camera_zoom + camera_position[0];
-	output[1] = (-window_size[1] / 2.0 + y) / tile_size / camera_zoom + camera_position[1];
+	output[0] = (-canvas->size.x / 2.0 + x) / tile_size / camera_zoom + camera_position[0];
+	output[1] = (-canvas->size.y / 2.0 + y) / tile_size / camera_zoom + camera_position[1];
 }
 
 void place_tile(int new_tile, int state = 0)
@@ -132,24 +84,24 @@ void get_input()
 		place_tile(EMPTY);
 
 	if (input->is_pressed(GLFW_KEY_ESCAPE))
-		glfwSetWindowShouldClose(window, 1);
+		glfwSetWindowShouldClose(canvas->window, 1);
 
 	
 	if (input->is_pressed(GLFW_KEY_LEFT))
 	{
-		camera_position[0] -= 3 / camera_zoom;
+		camera_position[0] -= 1 / camera_zoom;
 	}
 	if (input->is_pressed(GLFW_KEY_RIGHT))
 	{
-		camera_position[0] += 3 / camera_zoom;
+		camera_position[0] += 1 / camera_zoom;
 	}
 	if (input->is_pressed(GLFW_KEY_UP))
 	{
-		camera_position[1] -= 3 / camera_zoom;
+		camera_position[1] -= 1 / camera_zoom;
 	}
 	if (input->is_pressed(GLFW_KEY_DOWN))
 	{
-		camera_position[1] += 3 / camera_zoom;
+		camera_position[1] += 1 / camera_zoom;
 	}
 	if (input->is_pressed(GLFW_KEY_EQUAL))
 	{
@@ -221,7 +173,7 @@ void get_input()
 
 void on_click()
 {
-	if (input->mouse_x > window_margin && input->mouse_x < window_margin + sim.x_size * tile_size && input->mouse_y > window_margin && input->mouse_y < window_margin + sim.y_size * tile_size)
+	if (input->mouse_x > window_margin && input->mouse_x < canvas->size.x - (button_size + window_margin) * (((button_count - 1) / button_rows) + 1) && input->mouse_y > window_margin && input->mouse_y < window_margin + sim.y_size * tile_size)
 		switch (mouse_action)
 		{
 		case 1:
@@ -284,11 +236,11 @@ void on_click()
 				
 		}
 	
-	else// if (input->mouse_x > window_margin * 2 + sim.x_size * tile_size && input->mouse_x < window_margin * 2 + sim.x_size * tile_size + button_size)
+	// if (input->mouse_x > window_margin * 2 + sim.x_size * tile_size && input->mouse_x < window_margin * 2 + sim.x_size * tile_size + button_size)
 	{
 		for (int i = 0; i < button_count; ++i)
 			if (input->mouse_y > window_margin + (window_margin + button_size) * (i % button_rows) && input->mouse_y < window_margin + (window_margin + button_size) * (i % button_rows) + button_size
-				&& input->mouse_x > window_margin * 2 + sim.x_size * tile_size + (button_size + window_margin) * (i / button_rows) && input->mouse_x < window_margin * 2 + sim.x_size * tile_size + (button_size + window_margin) * (i / button_rows) + button_size)
+				&& input->mouse_x > canvas->size.x - (button_size + window_margin) * (((button_count - 1) / button_rows) + 1) + (button_size + window_margin) * (i / button_rows) && input->mouse_x < canvas->size.x - (button_size + window_margin) * (((button_count - 1) / button_rows) + 1) + (button_size + window_margin) * (i / button_rows) + button_size)
 			{
 				if (i == 0)
 					sim.clear();
@@ -311,7 +263,9 @@ void update()
 	float delta = compare_times(t, new_time);
 	t = new_time;
 
-	glfwGetWindowSize(window, &window_size[0], &window_size[1]);
+	glfwGetWindowSize(canvas->window, &canvas->size.x, &canvas->size.y);
+	glViewport(0, 0, canvas->size.x, canvas->size.y);
+	glScissor(0, 0, canvas->size.x, canvas->size.y);
 
 	if (run_sim && compare_times(last_sim_update, new_time) > 1.0 / tps)
 	{
@@ -331,10 +285,12 @@ void draw_buttons()
 	const int b[13] = { 0,   0, 255, 255, 200,   0, 50,  47,   0, 255,
 								  192,   0,   0, };
 
+	button_rows = (canvas->size.y - window_margin) / (button_size + window_margin);
+
 	for (int i = 0; i < button_count; ++i)
 	{
 		int rect[4] = {
-			sim.x_size * tile_size + window_margin * 2 + (button_size + window_margin) * (i / button_rows),
+			canvas->size.x - (button_size + window_margin) * (((button_count - 1) / button_rows) + 1) + (button_size + window_margin) * (i / button_rows), //sim.x_size * tile_size + window_margin * 2 + (button_size + window_margin) * (i / button_rows),
 			window_margin + (button_size + window_margin) * (i % button_rows),
 			button_size,
 			button_size,
@@ -387,10 +343,10 @@ void draw_buttons()
 void draw_sim2()
 {
 	float vertices[] = {
-		-1.0f + float(window_margin + sim.x_size * tile_size) / window_size[0] * 2.0f, -1.0f + float(window_margin) / window_size[1] * 2.0f, 0.0f,  // top right
-		-1.0f + float(window_margin + sim.x_size * tile_size) / window_size[0] * 2.0f,  1.0f - float(window_margin) / window_size[1] * 2.0f, 0.0f,  // bottom right
-		-1.0f + float(window_margin) / window_size[0] * 2.0f,  1.0f - float(window_margin) / window_size[1] * 2.0f, 0.0f,  // bottom left
-		-1.0f + float(window_margin) / window_size[0] * 2.0f, -1.0f + float(window_margin) / window_size[1] * 2.0f, 0.0f   // top left 
+		 1.0f - float((button_size + window_margin) * (((button_count - 1) / button_rows) + 1) + window_margin) / canvas->size.x * 2.0f, -1.0f + float(window_margin) / canvas->size.y * 2.0f, 0.0f,  // top right
+		 1.0f - float((button_size + window_margin) * (((button_count - 1) / button_rows) + 1) + window_margin) / canvas->size.x * 2.0f,  1.0f - float(window_margin) / canvas->size.y * 2.0f, 0.0f,  // bottom right
+		-1.0f + float(window_margin) / canvas->size.x * 2.0f,  1.0f - float(window_margin) / canvas->size.y * 2.0f, 0.0f,  // bottom left
+		-1.0f + float(window_margin) / canvas->size.x * 2.0f, -1.0f + float(window_margin) / canvas->size.y * 2.0f, 0.0f   // top left 
 	};
 
 	unsigned int indices[] = {
@@ -405,19 +361,16 @@ void draw_sim2()
 	glBindVertexArray(VAO);
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_DYNAMIC_DRAW);
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 
 	// note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-
-
 
 	auto materialMatrix = sim.get_texture_data();
 
@@ -478,18 +431,16 @@ void draw()
 	draw_buttons();
 
 	// Swap front and back buffers
-	glfwSwapBuffers(window);
+	glfwSwapBuffers(canvas->window);
 	// Poll for and process events
 	glfwPollEvents();
 }
 
 int main(int argc, char* argv[])
 {
-	initialize_window();
-
 	setup();
 
-	while (!glfwWindowShouldClose(window))
+	while (!glfwWindowShouldClose(canvas->window))
 	{
 		get_input();
 		update();

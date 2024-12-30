@@ -3,6 +3,53 @@
 unsigned int TILE_SHADER, COLOR_SHADER;
 Canvas* Canvas::instancePtr = nullptr;
 
+Canvas::Canvas()
+{
+    initialize_window();
+    initialize_shaders();
+}
+
+void Canvas::initialize_window()
+{
+    // Initialize GLFW
+    if (!glfwInit()) {
+        std::cerr << "Failed to initialize GLFW" << std::endl;
+        return;
+    }
+
+    int window_size[2];
+
+    window_size[0] = 1600; //sim.x_size * tile_size + window_margin * 2 + (button_size + window_margin) * (((button_count - 1) / button_rows) + 1);
+    window_size[1] = 900; //sim.y_size * tile_size + window_margin * 2;
+
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+    // Create a windowed mode window and its OpenGL context
+    window = glfwCreateWindow(
+        window_size[0],
+        window_size[1],
+        "Sand",
+        nullptr,
+        nullptr
+    );
+
+    if (!window) {
+        std::cerr << "Failed to create GLFW window" << std::endl;
+        glfwTerminate();
+        return;
+    }
+    glfwMakeContextCurrent(window);
+
+    // Initialize GLEW
+    glewExperimental = GL_TRUE; // Needed for core profile
+    if (glewInit() != GLEW_OK) {
+        std::cerr << "Failed to initialize GLEW" << std::endl;
+        return;
+    }
+}
+
 void Canvas::initialize_shaders()
 {
     TILE_SHADER = create_shader("tiles_fragment.glsl", "default_vertex.glsl");
@@ -66,10 +113,10 @@ void Canvas::draw_rect(float x, float y, float width, float height, float r, flo
 
     // Create a transformation matrix for the rectangle
     float vertices[] = {
-        x, y,         // Bottom left
-        x + width, y, // Bottom right
-        x + width, y + height, // Top right
-        x, y + height // Top left
+        -1.0f + x / size.x * 2.0f, 1.0f - y / size.y * 2.0f, 0,         // Bottom left
+        -1.0f + (x + width) / size.x * 2.0f, 1.0f - y / size.y * 2.0f, 0, // Bottom right
+        -1.0f + (x + width) / size.x * 2.0f, 1.0f - (y + height) / size.y * 2.0f, 0, // Top right
+        -1.0f + x / size.x * 2.0f, 1.0f - (y + height) / size.y * 2.0f, 0, // Top left
     };
 
     unsigned int indices[] = {
