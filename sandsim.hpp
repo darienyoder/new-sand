@@ -28,6 +28,10 @@ public:
 	void set_tile(int x, int y, int new_tile);
 
 	void swap_tiles(int x1, int y1, int x2, int y2);
+	std::vector<int> get_path(int x1, int y1, int x2, int y2, int max_length = 0);
+
+	void explode(int x, int y, int force);
+	void explode_path(int x1, int y1, int x2, int y2, int force);
 
 	bool is_tile_empty(int x, int y);
 

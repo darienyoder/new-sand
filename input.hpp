@@ -38,6 +38,11 @@ public:
 	bool mouse_down = false, right_mouse_down = false;
 	bool just_clicked = false, just_right_clicked = false;
 
+	int click_time = 0;
+	bool click_ready = false;
+
+	bool just_click();
+
 private:
 	InputManager() {};
 	static InputManager* instancePtr;

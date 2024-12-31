@@ -13,6 +13,7 @@ int target_fps = 60;
 int tps = 60;
 auto t = std::chrono::high_resolution_clock::now();
 auto last_sim_update = t;
+auto last_draw = t;
 
 SandSim sim(200, 120);
 InputManager* input = InputManager::getInstance();
@@ -22,17 +23,18 @@ int mouse_action = 1;
 
 bool run_sim = true;
 
-int tile_size = 8;
+int tile_size = 1;
 
 const int window_margin = 10;
-const int button_size = 70;
-const int button_count = 13;
+const int button_min_size = 70;
+int button_size = 70;
+const int button_count = 20;
 int button_rows = 10;
 
 float camera_position[2] = { -10, -10 };
 float camera_zoom = 1.0;
 
-unsigned int VAO, VBO;
+unsigned int VAO, VBO, EBO;
 
 void cleanup()
 {
@@ -47,18 +49,40 @@ void setup()
 
 	camera_position[0] = sim.x_size * 0.5;
 	camera_position[1] = sim.y_size * 0.5;
-	camera_zoom = 0.95;
+	camera_zoom = 6.0;
+
+	glGenVertexArrays(1, &VAO);
+	glGenBuffers(1, &VBO);
+	glGenBuffers(1, &EBO);
+
+	// Bind the VAO
+	glBindVertexArray(VAO);
+
+	// Bind and set vertex buffer(s)
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 4 * 3, nullptr, GL_DYNAMIC_DRAW); // Allocate space for vertices
+
+	// Bind and set index buffer(s)
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * 6, nullptr, GL_DYNAMIC_DRAW); // Allocate space for indices
+
+	// Set vertex attribute pointers
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+
+	// Unbind the VAO
+	glBindVertexArray(0);
 }
 
-void screen_to_sim(int x, int y, int output[])
+void screen_to_sim(float x, float y, float output[])
 {
-	output[0] = (-canvas->size.x / 2.0 + x) / tile_size / camera_zoom + camera_position[0];
-	output[1] = (-canvas->size.y / 2.0 + y) / tile_size / camera_zoom + camera_position[1];
+	output[0] = float(-canvas->size.x / 2.0 + x) / camera_zoom + camera_position[0];
+	output[1] = float(-canvas->size.y / 2.0 + y) / camera_zoom + camera_position[1];
 }
 
 void place_tile(int new_tile, int state = 0)
 {
-	int tile[2];
+	float tile[2];
 	screen_to_sim(input->mouse_x, input->mouse_y, tile);
 
 	const int radius = 5;
@@ -86,30 +110,35 @@ void get_input()
 	if (input->is_pressed(GLFW_KEY_ESCAPE))
 		glfwSetWindowShouldClose(canvas->window, 1);
 
+	if (input->is_pressed(GLFW_KEY_SPACE))
+	{
+		run_sim = !run_sim;
+	}
+
 	
 	if (input->is_pressed(GLFW_KEY_LEFT))
 	{
-		camera_position[0] -= 1 / camera_zoom;
+		camera_position[0] -= 0.001 / camera_zoom;
 	}
 	if (input->is_pressed(GLFW_KEY_RIGHT))
 	{
-		camera_position[0] += 1 / camera_zoom;
+		camera_position[0] += 0.001 / camera_zoom;
 	}
 	if (input->is_pressed(GLFW_KEY_UP))
 	{
-		camera_position[1] -= 1 / camera_zoom;
+		camera_position[1] -= 0.001 / camera_zoom;
 	}
 	if (input->is_pressed(GLFW_KEY_DOWN))
 	{
-		camera_position[1] += 1 / camera_zoom;
+		camera_position[1] += 0.001 / camera_zoom;
 	}
 	if (input->is_pressed(GLFW_KEY_EQUAL))
 	{
-		camera_zoom *= 1.01;
+		camera_zoom *= 1.0001;
 	}
 	if (input->is_pressed(GLFW_KEY_MINUS))
 	{
-		camera_zoom /= 1.01;
+		camera_zoom /= 1.0001;
 	}
 
 
@@ -173,7 +202,7 @@ void get_input()
 
 void on_click()
 {
-	if (input->mouse_x > window_margin && input->mouse_x < canvas->size.x - (button_size + window_margin) * (((button_count - 1) / button_rows) + 1) && input->mouse_y > window_margin && input->mouse_y < window_margin + sim.y_size * tile_size)
+	if (input->mouse_x < canvas->size.x - window_margin - (button_size + window_margin) * (((button_count - 1) / button_rows) + 1))//(input->mouse_x > window_margin && input->mouse_x < canvas->size.x - (button_size + window_margin) * (((button_count - 1) / button_rows) + 1) && input->mouse_y > window_margin && input->mouse_y < window_margin + sim.y_size * tile_size)
 		switch (mouse_action)
 		{
 		case 1:
@@ -233,10 +262,20 @@ void on_click()
 		case 13:
 			place_tile(WOOD);
 			break;
+
+		case 14:
+			if (input->just_click())
+			{
+				float mouse_coords[2];
+				screen_to_sim(input->mouse_x, input->mouse_y, mouse_coords);
+				sim.explode(mouse_coords[0], mouse_coords[1], 30);
+			}
+			break;
 				
 		}
 	
 	// if (input->mouse_x > window_margin * 2 + sim.x_size * tile_size && input->mouse_x < window_margin * 2 + sim.x_size * tile_size + button_size)
+	if (input->just_click())
 	{
 		for (int i = 0; i < button_count; ++i)
 			if (input->mouse_y > window_margin + (window_margin + button_size) * (i % button_rows) && input->mouse_y < window_margin + (window_margin + button_size) * (i % button_rows) + button_size
@@ -285,7 +324,8 @@ void draw_buttons()
 	const int b[13] = { 0,   0, 255, 255, 200,   0, 50,  47,   0, 255,
 								  192,   0,   0, };
 
-	button_rows = (canvas->size.y - window_margin) / (button_size + window_margin);
+	button_rows = (canvas->size.y - window_margin) / (button_min_size + window_margin);
+	button_size = (canvas->size.y - window_margin) / button_rows - window_margin;
 
 	for (int i = 0; i < button_count; ++i)
 	{
@@ -296,14 +336,14 @@ void draw_buttons()
 			button_size,
 		};
 		
-		canvas->draw_rect(rect[0], rect[1], rect[2], rect[3], 200 * int(i == mouse_action), 200 * int(i == mouse_action), 200 * int(i == mouse_action), VAO);
+		canvas->draw_rect(rect[0], rect[1], rect[2], rect[3], 200 * int(i == mouse_action), 200 * int(i == mouse_action), 200 * int(i == mouse_action), VAO, VBO, EBO);
 
 		rect[0] += 5;
 		rect[1] += 5;
 		rect[2] -= 10;
 		rect[3] -= 10;
 
-		canvas->draw_rect(rect[0], rect[1], rect[2], rect[3], r[i] / 255.0, g[i] / 255.0, b[i] / 255.0, VAO);
+		canvas->draw_rect(rect[0], rect[1], rect[2], rect[3], r[i] / 255.0, g[i] / 255.0, b[i] / 255.0, VAO, VBO, EBO);
 
 		/*
 		if (i == 0)
@@ -353,18 +393,15 @@ void draw_sim2()
 		0, 1, 3,
 		1, 2, 3
 	};
-	unsigned int EBO;
-	glGenVertexArrays(1, &VAO);
-	glGenBuffers(1, &VBO);
-	glGenBuffers(1, &EBO);
+
 	// bind the Vertex Array Object first, then bind and set vertex buffer(s), and then configure vertex attributes(s).
 	glBindVertexArray(VAO);
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_DYNAMIC_DRAW);
+	glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, sizeof(indices), indices);
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
@@ -403,8 +440,9 @@ void draw_sim2()
 	// Set the sampler uniform in the shader
 	glUniform1i(glGetUniformLocation(TILE_SHADER, "materialTexture"), 0);
 	
-	float fl_winsize[2] = { float(sim.x_size * tile_size), float(sim.y_size * tile_size) };
+	float fl_winsize[2] = { float(canvas->size.x), float(canvas->size.y) };
 	glUniform2fv(glGetUniformLocation(TILE_SHADER, "window_size"), 1, fl_winsize);
+	glUniform2f(glGetUniformLocation(TILE_SHADER, "sim_size"), sim.x_size, sim.y_size);
 	glUniform2fv(glGetUniformLocation(TILE_SHADER, "camera_position"), 1, camera_position);
 	glUniform1i(glGetUniformLocation(TILE_SHADER, "tile_size"), tile_size);
 	glUniform1f(glGetUniformLocation(TILE_SHADER, "camera_zoom"), camera_zoom);
@@ -423,6 +461,8 @@ void draw_sim2()
 
 void draw()
 {
+	last_draw = t;
+
 	glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
@@ -443,8 +483,11 @@ int main(int argc, char* argv[])
 	while (!glfwWindowShouldClose(canvas->window))
 	{
 		get_input();
+		
 		update();
-		draw();
+
+		if (compare_times(last_draw, t) > 1.0 / target_fps)
+			draw();
 	}
 
 	cleanup();

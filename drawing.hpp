@@ -28,7 +28,7 @@ public:
 	unsigned int compile_shader(unsigned int type, const char* source);
 	unsigned int create_shader(const char* fragment, const char* vertex);
 
-	void draw_rect(float x, float y, float width, float height, float r, float g, float b, unsigned int VAO);
+	void draw_rect(float x, float y, float width, float height, float r, float g, float b, unsigned int VAO, unsigned int VBO, unsigned int EBO);
 
 
 	GLFWwindow* window;

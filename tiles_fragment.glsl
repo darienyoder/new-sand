@@ -7,15 +7,16 @@ uniform isampler2D materialTexture;
 
 uniform int tile_size;
 uniform vec2 window_size;
+uniform vec2 sim_size;
 
 uniform vec2 camera_position;
 uniform float camera_zoom;
 
 int get_material(vec2 coords)
 {
-	if (coords.x < 0.0 || coords.y < 0.0 || coords.x >= window_size.x / tile_size || coords.y >= window_size.y / tile_size)
+	if (coords.x < 0.0 || coords.y < 0.0 || coords.x >= sim_size.x || coords.y >= sim_size.y)
 		return -1;
-	return texture(materialTexture, coords.yx / window_size.yx * tile_size).r;
+	return texture(materialTexture, coords.yx / sim_size.yx).r;
 }
 
 vec3 get_material_color(int material, float value)
@@ -54,7 +55,7 @@ vec3 get_material_color(int material, float value)
 
 vec2 screen_to_game(vec2 coords)
 {
-	return ivec2( vec2(-window_size.xy / 2.0 + coords.xy) / tile_size / camera_zoom + camera_position.xy);
+	return vec2( vec2(-window_size.xy / 2.0 + coords.xy) / camera_zoom + camera_position.xy);
 }
 
 vec3 first_pass(vec2 screen_coords, float value)
@@ -66,6 +67,9 @@ vec3 first_pass(vec2 screen_coords, float value)
 	if (material == -1)
 		return clr;
 
+	float steam = 0.0;
+	float smoke = 0.0;
+
 	for (int x = -5; x < 6; x++)
 	for (int y = -5; y < 6; y++)
 	{
@@ -73,15 +77,11 @@ vec3 first_pass(vec2 screen_coords, float value)
 		{
 			int neighbor = get_material(coords + vec2(x, y));
 			
-			float scale = 0.0; // Steam
-			if ((material == 0 || material == 4 || material == 11) && neighbor == 4)
-				scale += 0.015;
-			clr = vec3(0.9) * scale + clr * (1.0 - scale);
+			if ((true || material == 0 || material == 4 || material == 11) && neighbor == 4)
+				steam += 0.02;
 
-			scale = 0.0; // Smoke
 			if ((true || material == 0 || material == 11 || material == 4) && neighbor == 11)
-				scale += 0.03;
-			clr = vec3(0.3) * scale + clr * (1.0 - scale);
+				smoke += 0.02;
 
 			if (neighbor == 7) // Lava
 				clr += vec3(0.02, 0.0, 0.0);
@@ -93,6 +93,10 @@ vec3 first_pass(vec2 screen_coords, float value)
 				clr = vec3(1.0, 1.0, 1.0);
 		}
 	}
+	
+	clr = vec3(0.9) * steam + clr * (1.0 - steam);
+	clr = vec3(0.3) * smoke + clr * (1.0 - smoke);
+
 	return clr;
 }
 
@@ -129,7 +133,7 @@ void main()
 		for (int y = -2; y < 3; y++)
 		//	if (x*x + y*y <= 4)
 		{
-			color.rgb += first_pass(gl_FragCoord.xy + vec2(x, y) * tile_size / hardness, value);
+			color.rgb += first_pass(gl_FragCoord.xy + vec2(x, y) / hardness, value);
 			count++;
 		}
 		color.rgb /= count;

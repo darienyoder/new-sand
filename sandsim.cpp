@@ -54,6 +54,8 @@ void SandSim::set_tile(int x, int y, int material)
 		tiles[x][y]->y = y;
 
 		delete temp;
+
+		make_active(x, y);
 	}
 }
 
@@ -224,4 +226,98 @@ std::vector<int> SandSim::get_texture_data()
 		}
 	}
 	return materialMatrix;
+}
+
+void SandSim::explode(int x, int y, int force)
+{
+	for (int x_ = -force; x_ < force; x_++)
+		explode_path(x, y, x + x_, y - force, force);
+
+	for (int y_ = -force; y_ < force; y_++)
+		explode_path(x, y, x - force, y + y_, force);
+
+	for (int x_ = -force; x_ < force; x_++)
+		explode_path(x, y, x + x_, y + force, force);
+
+	for (int y_ = -force; y_ < force; y_++)
+		explode_path(x, y, x + force, y + y_, force);
+}
+
+void SandSim::explode_path(int x1, int y1, int x2, int y2, int force)
+{
+	std::vector<int> path = get_path(x1, y1, x2, y2, force);
+
+	for (int i = 0; i < path.size() / 2; i++)
+	{
+		auto tile = get_tile(path[i * 2], path[i * 2 + 1]);
+
+		if (tile.material == EMPTY || tile.material == FIRE)
+		{
+			set_tile(path[i * 2], path[i * 2 + 1], FIRE);
+		}
+		else if (Gas* gas = dynamic_cast<Gas*>(&tile))
+		{
+			set_tile(path[i * 2], path[i * 2 + 1], FIRE);
+		}
+		else if (tile.material == 2)//(Liquid* liquid = dynamic_cast<Liquid*>(&tile))
+		{
+			break;
+		}
+		else
+		{
+			if (force > tile.hp)
+			{
+				get_tile(path[i * 2], path[i * 2 + 1]).remove();
+				//set_tile(path[i * 2], path[i * 2 + 1], FIRE);
+				force -= tile.hp;
+			}
+			else
+				break;
+		}
+	}
+}
+
+std::vector<int> SandSim::get_path(int x1, int y1, int x2, int y2, int max_length)
+{
+	std::vector<int> path;
+
+	int xDiff = x1 - x2;
+	int yDiff = y1 - y2;
+	bool xDiffIsLarger = std::abs(xDiff) > std::abs(yDiff);
+
+	int xModifier = xDiff < 0 ? 1 : -1;
+	int yModifier = yDiff < 0 ? 1 : -1;
+
+	int longerSideLength = std::max(std::abs(xDiff), std::abs(yDiff));
+	int shorterSideLength = std::min(std::abs(xDiff), std::abs(yDiff));
+	float slope = (shorterSideLength == 0 || longerSideLength == 0) ? 0 : ((float)(shorterSideLength) / (longerSideLength));
+
+	int pastX = x1;
+	int pastY = y1;
+
+	int shorterSideIncrease;
+	for (int i = 1; i <= std::min((float)longerSideLength, 300000.0f); i++)
+	{
+		shorterSideIncrease = std::round(i * slope);
+		int yIncrease, xIncrease;
+		if (xDiffIsLarger)
+		{
+			xIncrease = i;
+			yIncrease = shorterSideIncrease;
+		}
+		else
+		{
+			yIncrease = i;
+			xIncrease = shorterSideIncrease;
+		}
+		int currentY = y1 + (yIncrease * yModifier);
+		int currentX = x1 + (xIncrease * xModifier);
+
+		if (max_length && (currentX - x1) * (currentX - x1) + (currentY - y1) * (currentY - y1) > max_length * max_length)
+			break;
+
+		path.push_back(currentX);
+		path.push_back(currentY);
+	}
+	return path;
 }

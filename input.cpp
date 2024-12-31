@@ -32,8 +32,13 @@ void InputManager::update()
 {
 	keys_just_pressed.clear();
 	keys_just_released.clear();
-	just_clicked = false;
-	just_right_clicked = false;
+	if (mouse_down)
+	{
+		click_time += 1;
+		click_ready = click_ready && click_time < 5;
+	}
+	else
+		click_ready = false;
 
 	glfwPollEvents();
 }
@@ -87,14 +92,14 @@ void InputManager::on_mouse_button_callback(GLFWwindow* window_, int button, int
 	case GLFW_PRESS:
 		if (button == GLFW_MOUSE_BUTTON_LEFT)
 		{
-			if (!mouse_down)
-				just_clicked = true;
+			just_clicked = true;
+			click_time = 0;
 			mouse_down = true;
+			click_ready = true;
 		}
 		else if (button == GLFW_MOUSE_BUTTON_RIGHT)
 		{
-			if (!right_mouse_down)
-				just_right_clicked = true;
+			just_right_clicked = true;
 			right_mouse_down = true;
 		}
 		break;
@@ -139,6 +144,16 @@ bool InputManager::is_just_released(int input)
 		{
 			return true;
 		}
+	}
+	return false;
+}
+
+bool InputManager::just_click()
+{
+	if (click_ready)
+	{
+		click_ready = false;
+		return mouse_down;
 	}
 	return false;
 }

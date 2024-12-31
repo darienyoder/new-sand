@@ -44,6 +44,7 @@ public:
 	int material = EMPTY;
 	int x = 0, y = 0;
 	int r = 255, g = 0, b = 0;
+	int hp = 1;
 
 	bool about_to_delete = false;
 
@@ -93,6 +94,7 @@ public:
 	Sand()
 	{
 		density = 1442;
+		hp = 4;
 	}
 };
 
@@ -106,6 +108,10 @@ public:
 class Ice : public Solid
 {
 public:
+	Ice()
+	{
+		hp = 3;
+	}
 	void melt() { set_tile(x, y, WATER); }
 };
 
@@ -131,12 +137,17 @@ public:
 	Dirt()
 	{
 		density = 1600;
+		hp = 7;
 	}
 };
 
 class Stone : public Solid
 {
-
+public:
+	Stone()
+	{
+		hp = 15;
+	}
 };
 
 class Lava : public Liquid
@@ -170,7 +181,10 @@ public:
 class Wood : public Solid, public Flammable
 {
 public:
-	
+	Wood()
+	{
+		hp = 5;
+	}
 };
 
 class Acid : public Liquid
