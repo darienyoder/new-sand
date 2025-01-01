@@ -31,7 +31,9 @@ public:
 	std::vector<int> get_path(int x1, int y1, int x2, int y2, int max_length = 0);
 
 	void explode(int x, int y, int force);
-	void explode_path(int x1, int y1, int x2, int y2, int force);
+	void explode_path(int x1, int y1, int x2, int y2, float force);
+
+	void launch(int x, int y, int vel_x, int vel_y, int mode = 0, float param = 0.0);
 
 	bool is_tile_empty(int x, int y);
 

@@ -22,6 +22,7 @@ enum {
 	WOOD,
 	BATTERY,
 	WIRE,
+	AERIAL,
 };
 
 class Particle
@@ -137,7 +138,7 @@ public:
 	Dirt()
 	{
 		density = 1600;
-		hp = 7;
+		hp = 5;
 	}
 };
 
@@ -196,6 +197,37 @@ public:
 	}
 	void move_to(int x_, int y_);
 	bool can_move_through(int x_, int y_);
+};
+
+enum {
+	PARTICLE_MODE_GRAVITY,
+	PARTICLE_MODE_DISTANCE,
+	PARTICLE_MODE_TIME,
+};
+
+class Aerial : public Particle
+{
+public:
+	Aerial() { material = AERIAL; };
+	Aerial(Particle& source);
+
+	bool tick();
+	float speed() { return std::sqrtf(vel_x*vel_x + vel_y*vel_y); };
+
+	void full_remove() { about_to_full_delete = true; };
+
+	float vel_x = 0;
+	float vel_y = 0;
+
+	int mode = 0;
+	int age = 0;
+	float dist_traveled = 0.0;
+
+	float limit = 0.0;
+
+	Particle* p = 0;
+
+	bool about_to_full_delete = false;
 };
 
 #endif

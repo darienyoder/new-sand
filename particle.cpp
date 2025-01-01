@@ -19,6 +19,8 @@ bool Powder::tick()
 	if (get_move_speed(x, y + 1) > move_chance)
 	{
 		move_to(x, y + 1);
+		if (sim->is_tile_empty(x, y + 3))
+			sim->launch(x, y, 0, 1);
 		return true;
 	}
 	else
@@ -72,6 +74,8 @@ bool Liquid::tick()
 	if (can_move_through(x, y + 1))
 	{
 		move_to(x, y + 1);
+		if (sim->is_tile_empty(x, y + 3))
+			sim->launch(x, y, 0, 1);
 		return true;
 	}
 	else
@@ -80,13 +84,19 @@ bool Liquid::tick()
 
 		if (can_move_through(x + direction, y + 1))
 		{
-			move_to(x + direction, y + 1);
+			//if (sim->is_tile_empty(x + direction, y))
+			//	sim->launch(x, y, direction * (rand() % spread + 1), 0);
+			//else
+				move_to(x + direction, y + 1);
 			return true;
 		}
 		else if (can_move_through(x - direction, y + 1))
 		{
-			move_to(x - direction, y + 1);
 			direction *= -1;
+			//if (sim->is_tile_empty(x + direction, y))
+			//	sim->launch(x, y, direction * (rand() % spread + 1), 0);
+			//else
+				move_to(x + direction, y + 1);
 			return true;
 		}
 
@@ -289,6 +299,77 @@ bool Fire::tick()
 			}
 
 	if (covered || std::rand() % 5 == 0)
+		remove();
+
+	return true;
+}
+
+Aerial::Aerial(Particle& source)
+{
+	p = &source;
+	x = source.x;
+	y = source.y;
+	sim = source.sim;
+	hp = source.hp;
+	material = AERIAL;
+}
+
+bool Aerial::tick()
+{
+	std::vector<int> path = sim->get_path(x, y, x + vel_x, y + vel_y);
+
+	if (mode == PARTICLE_MODE_GRAVITY)
+		vel_y += 1;
+
+	int old_x = x, old_y = y;
+
+	for (int i = 0; i < path.size() / 2; i++)
+	{
+		if (i == 0)
+			continue;
+		if (sim->is_tile_empty(path[i * 2], path[i * 2 + 1]))
+		{
+			move_to(path[i * 2], path[i * 2 + 1]);
+		}
+		if (sim->get_tile(path[i * 2], path[i * 2 + 1]).material == AERIAL)
+		{
+			if (p->material == FIRE)
+				if (Liquid* liq = dynamic_cast<Liquid*>(&sim->get_tile(path[i * 2], path[i * 2 + 1])))
+				{
+					full_remove();
+					break;
+				}
+			move_to(path[i * 2], path[i * 2 + 1]);
+		}
+
+		else if ( Gas* gas = dynamic_cast<Gas*>(&sim->get_tile(path[i * 2], path[i * 2 + 1])) )
+		{
+			move_to(path[i * 2], path[i * 2 + 1]);
+		}
+		else
+		{
+			//if (Liquid* liq = dynamic_cast<Liquid*>(p))
+			//{ }
+			//else
+				if (speed() > 10)
+					for (int x_ = -1; x_ < 2; x_++)
+					for (int y_ = -1; y_ < 2; y_++)
+						if (x_ != 0 || y_ != 0)
+							if (Liquid* liq = dynamic_cast<Liquid*>(&sim->get_tile(x + x_, y + y_)))
+							{
+								sim->launch(x + x_, y + y_, -vel_x * 0.3 + rand() % 5 - 2, -vel_y * 0.3 + rand() % 5 - 2);
+							}
+			remove();
+			break;
+		}
+	}
+
+	age += 1;
+	dist_traveled += std::sqrt((old_x - x) * (old_x - x) + (old_y - y) * (old_y - y));
+
+	if ((mode == PARTICLE_MODE_DISTANCE && dist_traveled >= limit )
+	 || (mode == PARTICLE_MODE_TIME     &&           age >= limit )
+	 || (vel_x == 0 && vel_y == 0))
 		remove();
 
 	return true;

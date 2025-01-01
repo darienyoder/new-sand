@@ -15,7 +15,7 @@ auto t = std::chrono::high_resolution_clock::now();
 auto last_sim_update = t;
 auto last_draw = t;
 
-SandSim sim(200, 120);
+SandSim sim(300, 200);
 InputManager* input = InputManager::getInstance();
 Canvas* canvas;
 
@@ -85,7 +85,7 @@ void place_tile(int new_tile, int state = 0)
 	float tile[2];
 	screen_to_sim(input->mouse_x, input->mouse_y, tile);
 
-	const int radius = 5;
+	const int radius = 10;
 
 	for (int x = -radius; x < radius; x++)
 	for (int y = -radius; y < radius; y++)
@@ -93,6 +93,8 @@ void place_tile(int new_tile, int state = 0)
 		{
 			sim.set_tile(tile[0] + x, tile[1] + y, new_tile);
 			sim.make_active(tile[0] + x, tile[1] + y);
+			//if (Powder* pow = dynamic_cast<Powder*>(&sim.get_tile(tile[0] + x, tile[1] + y)))
+			//	sim.launch(tile[0] + x, tile[1] + y, 0, 2);
 		}
 }
 
@@ -118,19 +120,19 @@ void get_input()
 	
 	if (input->is_pressed(GLFW_KEY_LEFT))
 	{
-		camera_position[0] -= 0.001 / camera_zoom;
+		camera_position[0] -= 0.01 / camera_zoom;
 	}
 	if (input->is_pressed(GLFW_KEY_RIGHT))
 	{
-		camera_position[0] += 0.001 / camera_zoom;
+		camera_position[0] += 0.01 / camera_zoom;
 	}
 	if (input->is_pressed(GLFW_KEY_UP))
 	{
-		camera_position[1] -= 0.001 / camera_zoom;
+		camera_position[1] -= 0.01 / camera_zoom;
 	}
 	if (input->is_pressed(GLFW_KEY_DOWN))
 	{
-		camera_position[1] += 0.001 / camera_zoom;
+		camera_position[1] += 0.01 / camera_zoom;
 	}
 	if (input->is_pressed(GLFW_KEY_EQUAL))
 	{
@@ -268,7 +270,7 @@ void on_click()
 			{
 				float mouse_coords[2];
 				screen_to_sim(input->mouse_x, input->mouse_y, mouse_coords);
-				sim.explode(mouse_coords[0], mouse_coords[1], 30);
+				sim.explode(mouse_coords[0], mouse_coords[1], 50);
 			}
 			break;
 				

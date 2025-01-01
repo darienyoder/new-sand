@@ -190,7 +190,28 @@ void SandSim::simulate_tile(int x, int y)
 		if (tiles[x][y]->tick())
 			make_active(x, y);
 		if (tiles[tile->x][tile->y]->about_to_delete)
-			set_tile(tile->x, tile->y, EMPTY);
+		{
+			if (tiles[tile->x][tile->y]->material == AERIAL)
+			{
+				Aerial* aer = dynamic_cast<Aerial*>(tiles[tile->x][tile->y]);
+
+				if (aer->about_to_full_delete)
+					set_tile(tile->x, tile->y, EMPTY);
+				else
+				{
+					Particle* temp = tiles[tile->x][tile->y];
+
+					tiles[tile->x][tile->y] = aer->p;
+
+					tiles[tile->x][tile->y]->x = tile->x;
+					tiles[tile->x][tile->y]->y = tile->y;
+
+					delete temp;
+				}
+			}
+			else
+				set_tile(tile->x, tile->y, EMPTY);
+		}
 	}
 }
 
@@ -221,7 +242,10 @@ std::vector<int> SandSim::get_texture_data()
 	{
 		for (size_t j = 0; j < y_size; ++j)
 		{
-			materialMatrix[i * y_size * 2 + j * 2] = tiles[i][j]->material;
+			if (Aerial* aer = dynamic_cast<Aerial*>(tiles[i][j]))
+				materialMatrix[i * y_size * 2 + j * 2] = aer->p->material;
+			else
+				materialMatrix[i * y_size * 2 + j * 2] = tiles[i][j]->material;
 			materialMatrix[i * y_size * 2 + j * 2 + 1] = 0;
 		}
 	}
@@ -243,36 +267,92 @@ void SandSim::explode(int x, int y, int force)
 		explode_path(x, y, x + force, y + y_, force);
 }
 
-void SandSim::explode_path(int x1, int y1, int x2, int y2, int force)
+void SandSim::explode_path(int x1, int y1, int x2, int y2, float force)
 {
-	std::vector<int> path = get_path(x1, y1, x2, y2, force);
+	float init_force = force;
+	std::vector<int> path = get_path(x1, y1, x2, y2);
+
+	float total_dist = 0.0;
+
+	if (force > get_tile(x1, y1).hp)
+		set_tile(x1, y1, FIRE);
+
+	bool destroy = true;
 
 	for (int i = 0; i < path.size() / 2; i++)
 	{
-		auto tile = get_tile(path[i * 2], path[i * 2 + 1]);
-
-		if (tile.material == EMPTY || tile.material == FIRE)
-		{
-			set_tile(path[i * 2], path[i * 2 + 1], FIRE);
-		}
-		else if (Gas* gas = dynamic_cast<Gas*>(&tile))
-		{
-			set_tile(path[i * 2], path[i * 2 + 1], FIRE);
-		}
-		else if (tile.material == 2)//(Liquid* liquid = dynamic_cast<Liquid*>(&tile))
-		{
+		if (i == 0)
+			continue;
+		if (!in_bounds(path[i * 2], path[i * 2 + 1]))
 			break;
+
+		auto tile = tiles[path[i * 2]][path[i * 2 + 1]];
+		total_dist = std::sqrt((path[i * 2] - x1) * (path[i * 2] - x1) + (path[i * 2 + 1] - y1) * (path[i * 2 + 1] - y1));
+		float dist = total_dist - std::sqrt((path[(i-1) * 2] - x1) * (path[(i-1) * 2] - x1) + (path[(i-1) * 2 + 1] - y1) * (path[(i-1) * 2 + 1] - y1));
+
+		// Ignore air tiles that have just been filled with fire
+		if (tile->material == FIRE)
+		{
+			force -= dist;
+			float length = std::sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+			int speed = std::rand() % 3 + 1;
+			launch(path[i * 2], path[i * 2 + 1], (x2 - x1) / length * 10 * speed, (y2 - y1) / length * 10 * speed, PARTICLE_MODE_DISTANCE, std::max(std::abs(x2 - x1), std::abs(y2 - y1)) - total_dist);
+			if (force <= 0)
+				break;
 		}
+		// Just exploded tiles
+		else if (tile->material == AERIAL)
+		{
+			if (Liquid* liq = dynamic_cast<Liquid*>(dynamic_cast<Aerial*>(tile)->p))
+				destroy = false;
+			force -= tile->hp;
+		}
+		// Empty air tiles fill with fire
+		else if (tile->material == EMPTY)
+		{
+			if (destroy && (rand() % 100) / 50.0 < force / init_force)// && total_dist < std::max(std::abs(x2 - x1), std::abs(y2 - y1)) * 0.25)
+				set_tile(path[i * 2], path[i * 2 + 1], FIRE);
+			force -= dist;
+			if (force <= 0)
+				break;
+		}
+		// Gases become fire
+		else if (Gas* gas = dynamic_cast<Gas*>(tile))
+		{
+			force -= dist;
+			if (destroy && (rand() % 100) / 50.0 < force / init_force && total_dist < std::sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1)) * 0.25)
+				set_tile(path[i * 2], path[i * 2 + 1], FIRE);
+		}
+		// Everything else
 		else
 		{
-			if (force > tile.hp)
+			force -= tile->hp;
+			if (force < 1)
+				break;
+
+			if (Liquid* liq = dynamic_cast<Liquid*>(tile))
+				destroy = false;
+
+			if (destroy)
+				if (Powder* pow = dynamic_cast<Powder*>(tile))
+					destroy = force > init_force * 0.25;
+
+			if (Solid* sol = dynamic_cast<Solid*>(tile))
+				if (!destroy || force < init_force * 0.25)
+					break;
+
+			if (destroy)
 			{
-				get_tile(path[i * 2], path[i * 2 + 1]).remove();
-				//set_tile(path[i * 2], path[i * 2 + 1], FIRE);
-				force -= tile.hp;
+				if ((rand() % 100) / 100.0 > force / init_force)
+					set_tile(path[i * 2], path[i * 2 + 1], FIRE);
+				else
+					set_tile(path[i * 2], path[i * 2 + 1], EMPTY);
 			}
 			else
-				break;
+			{
+				float length = std::sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
+				launch(path[i * 2], path[i * 2 + 1], (x2 - x1) / length * force / 5 + rand() % 5 - 2, -std::abs((y1 - y2) / length * force / 5));
+			}
 		}
 	}
 }
@@ -296,7 +376,7 @@ std::vector<int> SandSim::get_path(int x1, int y1, int x2, int y2, int max_lengt
 	int pastY = y1;
 
 	int shorterSideIncrease;
-	for (int i = 1; i <= std::min((float)longerSideLength, 300000.0f); i++)
+	for (int i = 0; i <= std::min((float)longerSideLength, 300000.0f); i++)
 	{
 		shorterSideIncrease = std::round(i * slope);
 		int yIncrease, xIncrease;
@@ -320,4 +400,34 @@ std::vector<int> SandSim::get_path(int x1, int y1, int x2, int y2, int max_lengt
 		path.push_back(currentY);
 	}
 	return path;
+}
+
+void SandSim::launch(int x, int y, int vel_x, int vel_y, int mode, float param)
+{
+	if (in_bounds(x, y))
+	{
+		if (tiles[x][y]->material == AERIAL)
+			return;
+
+		Aerial* aer = new Aerial(get_tile(x, y));
+
+		switch (mode)
+		{
+		case PARTICLE_MODE_GRAVITY:
+			aer->mode = PARTICLE_MODE_GRAVITY;
+			break;
+		case PARTICLE_MODE_DISTANCE:
+			aer->mode = PARTICLE_MODE_DISTANCE;
+			aer->limit = param;
+			break;
+		case PARTICLE_MODE_TIME:
+			aer->mode = PARTICLE_MODE_TIME;
+			aer->limit = param;
+			break;
+		}
+
+		aer->vel_x = vel_x;
+		aer->vel_y = vel_y;
+		tiles[x][y] = aer;
+	}
 }
