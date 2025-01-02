@@ -15,7 +15,7 @@ auto t = std::chrono::high_resolution_clock::now();
 auto last_sim_update = t;
 auto last_draw = t;
 
-SandSim sim(300, 200);
+SandSim sim(400, 240);
 InputManager* input = InputManager::getInstance();
 Canvas* canvas;
 
@@ -85,7 +85,8 @@ void place_tile(int new_tile, int state = 0)
 	float tile[2];
 	screen_to_sim(input->mouse_x, input->mouse_y, tile);
 
-	const int radius = 10;
+	int radius = 5;
+	if (mouse_action == 15) radius = 1;
 
 	for (int x = -radius; x < radius; x++)
 	for (int y = -radius; y < radius; y++)
@@ -270,8 +271,13 @@ void on_click()
 			{
 				float mouse_coords[2];
 				screen_to_sim(input->mouse_x, input->mouse_y, mouse_coords);
-				sim.explode(mouse_coords[0], mouse_coords[1], 50);
+				sim.explode(mouse_coords[0], mouse_coords[1], 65);
 			}
+			break;
+
+		case 15:
+			if (input->just_click())
+				place_tile(FIREWORK);
 			break;
 				
 		}

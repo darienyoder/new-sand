@@ -142,6 +142,9 @@ Particle* SandSim::create_element(int material)
 	case WOOD:
 		ptr = new Wood;
 		break;
+	case FIREWORK:
+		ptr = new Firework;
+		break;
 	default:
 		ptr = new Air;
 		break;
@@ -195,6 +198,11 @@ void SandSim::simulate_tile(int x, int y)
 			{
 				Aerial* aer = dynamic_cast<Aerial*>(tiles[tile->x][tile->y]);
 
+				if (aer->p->material == FIREWORK)
+				{
+					explode(tile->x, tile->y, 30 + rand() % 30);
+				}
+				
 				if (aer->about_to_full_delete)
 					set_tile(tile->x, tile->y, EMPTY);
 				else
@@ -293,10 +301,10 @@ void SandSim::explode_path(int x1, int y1, int x2, int y2, float force)
 		// Ignore air tiles that have just been filled with fire
 		if (tile->material == FIRE)
 		{
-			force -= dist;
+			//force -= dist;
 			float length = std::sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
 			int speed = std::rand() % 3 + 1;
-			launch(path[i * 2], path[i * 2 + 1], (x2 - x1) / length * 10 * speed, (y2 - y1) / length * 10 * speed, PARTICLE_MODE_DISTANCE, std::max(std::abs(x2 - x1), std::abs(y2 - y1)) - total_dist);
+			launch(path[i * 2], path[i * 2 + 1], (x2 - x1) / 10 * speed, (y2 - y1) / 10 * speed, PARTICLE_MODE_DISTANCE, std::max(std::abs(x2 - x1), std::abs(y2 - y1)) - total_dist);
 			if (force <= 0)
 				break;
 		}
@@ -305,7 +313,7 @@ void SandSim::explode_path(int x1, int y1, int x2, int y2, float force)
 		{
 			if (Liquid* liq = dynamic_cast<Liquid*>(dynamic_cast<Aerial*>(tile)->p))
 				destroy = false;
-			force -= tile->hp;
+			force -= tile->hp * (1 + (rand() % 5 - 2) * 0.1) * (0.5 + dist * 0.5);
 		}
 		// Empty air tiles fill with fire
 		else if (tile->material == EMPTY)
@@ -326,10 +334,11 @@ void SandSim::explode_path(int x1, int y1, int x2, int y2, float force)
 		// Everything else
 		else
 		{
-			force -= tile->hp;
+
+			force -= tile->hp * (1 + (rand() % 5 - 2) * 0.1) * (0.5 + dist * 0.5);
 			if (force < 1)
 				break;
-
+			
 			if (Liquid* liq = dynamic_cast<Liquid*>(tile))
 				destroy = false;
 
@@ -351,7 +360,8 @@ void SandSim::explode_path(int x1, int y1, int x2, int y2, float force)
 			else
 			{
 				float length = std::sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
-				launch(path[i * 2], path[i * 2 + 1], (x2 - x1) / length * force / 5 + rand() % 5 - 2, -std::abs((y1 - y2) / length * force / 5));
+				int speed = std::rand() % 3 + 1;
+				launch(path[i * 2], path[i * 2 + 1], (x2 - x1) / 10 * speed + rand() % 5 - 2, -std::abs((y1 - y2) / 10 * speed));
 			}
 		}
 	}

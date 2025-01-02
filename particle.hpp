@@ -20,9 +20,8 @@ enum {
 	FIRE,
 	SMOKE,
 	WOOD,
-	BATTERY,
-	WIRE,
 	AERIAL,
+	FIREWORK,
 };
 
 class Particle
@@ -214,7 +213,7 @@ public:
 	bool tick();
 	float speed() { return std::sqrtf(vel_x*vel_x + vel_y*vel_y); };
 
-	void full_remove() { about_to_full_delete = true; };
+	void full_remove() { about_to_delete = true; about_to_full_delete = true; };
 
 	float vel_x = 0;
 	float vel_y = 0;
@@ -228,6 +227,13 @@ public:
 	Particle* p = 0;
 
 	bool about_to_full_delete = false;
+};
+
+class Firework : public Particle
+{
+public:
+	Firework() {};
+	bool tick();
 };
 
 #endif

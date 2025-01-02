@@ -294,7 +294,7 @@ bool Fire::tick()
 			if (sim->is_tile_empty(x + x_, y + y_))
 			{
 				covered = false;
-				if (std::rand() % 64 == 0)
+				if (std::rand() % 256 == 0)
 					sim->set_tile(x + x_, y + y_, SMOKE);
 			}
 
@@ -372,5 +372,11 @@ bool Aerial::tick()
 	 || (vel_x == 0 && vel_y == 0))
 		remove();
 
+	return true;
+}
+
+bool Firework::tick()
+{
+	sim->launch(x, y, 0, -3, PARTICLE_MODE_TIME, 20 + rand() % 40);
 	return true;
 }

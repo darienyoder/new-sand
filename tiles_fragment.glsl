@@ -12,6 +12,8 @@ uniform vec2 sim_size;
 uniform vec2 camera_position;
 uniform float camera_zoom;
 
+const vec3 background = vec3(0.125,0.086,0.51);
+
 int get_material(vec2 coords)
 {
 	if (coords.x < 0.0 || coords.y < 0.0 || coords.x >= sim_size.x || coords.y >= sim_size.y)
@@ -24,7 +26,7 @@ vec3 get_material_color(int material, float value)
 	if (material == -1)
 		return vec3(0.1);
 	if (material == 0)
-		return vec3(0.0);
+		return background;
 	else if (material == 1) // SAND
 		return vec3(1.0, 0.9, 0.5) * value;
 	else if (material == 2) // WATER
@@ -32,7 +34,7 @@ vec3 get_material_color(int material, float value)
 	else if (material == 3) // ICE
 		return vec3(0.2, 0.6, 1.0);
 	else if (material == 4) // STEAM
-		return vec3(0.9, 0.9, 0.9) * 0.0;
+		return background; //return vec3(0.9, 0.9, 0.9) * 0.0;
 	else if (material == 5) // DIRT
 		return vec3(0.5, 0.25, 0.0) * value;
 	else if (material == 6) // STONE
@@ -46,9 +48,13 @@ vec3 get_material_color(int material, float value)
 	else if (material == 10) // FIRE
 		return vec3(0.9, 0.4, 0.1);
 	else if (material == 11) // SMOKE
-		return vec3(0.3, 0.3, 0.3) * 0.0;
+		return background; //return vec3(0.3, 0.3, 0.3) * 0.0;
 	else if (material == 12) // WOOD
 		return vec3(0.427, 0.275, 0.012) * value;
+	else if (material == 13) // AERIAL
+		return vec3(1.0); // this will never be used
+	else if (material == 14) // FIREWORK
+		return vec3(0.9, 0.4, 0.1);
 
 	return vec3(1.0, 0.2, 1.0);
 }
@@ -86,7 +92,7 @@ vec3 first_pass(vec2 screen_coords, float value)
 			if (neighbor == 7) // Lava
 				clr += vec3(0.02, 0.0, 0.0);
 
-			if (neighbor == 10) // Fire
+			if (neighbor == 10 || neighbor == 14) // Fire
 				clr += vec3(0.01, 0.0, 0.0);// * (1.0 - (x*x + y*y) / 25.0);
 
 			if (material == 2 && neighbor == 0 && x == 0 && y == -1)
