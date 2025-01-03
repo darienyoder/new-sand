@@ -12,7 +12,10 @@ uniform vec2 sim_size;
 uniform vec2 camera_position;
 uniform float camera_zoom;
 
-const vec3 background = vec3(0.125,0.086,0.51);
+const vec3 background = vec3(0.0);//vec3(0.125,0.086,0.51);
+
+const int outline_chunks = 1;
+
 
 int get_material(vec2 coords)
 {
@@ -112,6 +115,17 @@ void main()
 	vec2 coords = screen_to_game(gl_FragCoord.xy);
 
 	int material = get_material(coords);
+
+	if (outline_chunks == 1 && material != -1 && (int(coords.x * 2) % 40 == 0 || int(coords.y * 2) % 40 == 0))
+	{
+		color.rgb = vec3(1, 0, 0);
+		return;
+	}
+	if (material == 0)
+	{
+		color.rgb = texture(materialTexture, coords.yx / sim_size.yx).g == 1.0 ? vec3(0.4, 0.2, 0) : background;
+		return;
+	}
 
 	float value = ( int(pow(int(coords.x) % 50 + 50, (int(coords.y) % 20 + 20) * 0.1)) % 100) / 100.0;
 	value = value * 0.25 + 0.75;

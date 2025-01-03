@@ -15,7 +15,7 @@ auto t = std::chrono::high_resolution_clock::now();
 auto last_sim_update = t;
 auto last_draw = t;
 
-SandSim sim(400, 240);
+SandSim sim(200, 120);
 InputManager* input = InputManager::getInstance();
 Canvas* canvas;
 
@@ -49,7 +49,7 @@ void setup()
 
 	camera_position[0] = sim.x_size * 0.5;
 	camera_position[1] = sim.y_size * 0.5;
-	camera_zoom = 6.0;
+	camera_zoom = std::min(canvas->size.x / sim.x_size, canvas->size.y / sim.y_size);
 
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
@@ -85,7 +85,7 @@ void place_tile(int new_tile, int state = 0)
 	float tile[2];
 	screen_to_sim(input->mouse_x, input->mouse_y, tile);
 
-	int radius = 5;
+	int radius = 3;
 	if (mouse_action == 15) radius = 1;
 
 	for (int x = -radius; x < radius; x++)
@@ -94,6 +94,7 @@ void place_tile(int new_tile, int state = 0)
 		{
 			sim.set_tile(tile[0] + x, tile[1] + y, new_tile);
 			sim.make_active(tile[0] + x, tile[1] + y);
+			sim.make_chunk_active((tile[0] + x) / sim.chunk_size, (tile[1] + y) / sim.chunk_size);
 			//if (Powder* pow = dynamic_cast<Powder*>(&sim.get_tile(tile[0] + x, tile[1] + y)))
 			//	sim.launch(tile[0] + x, tile[1] + y, 0, 2);
 		}
@@ -332,8 +333,11 @@ void draw_buttons()
 	const int b[13] = { 0,   0, 255, 255, 200,   0, 50,  47,   0, 255,
 								  192,   0,   0, };
 
-	button_rows = (canvas->size.y - window_margin) / (button_min_size + window_margin);
-	button_size = (canvas->size.y - window_margin) / button_rows - window_margin;
+	if (canvas->size.y)
+	{
+		button_rows = (canvas->size.y - window_margin) / (button_min_size + window_margin);
+		button_size = (canvas->size.y - window_margin) / button_rows - window_margin;
+	}
 
 	for (int i = 0; i < button_count; ++i)
 	{
@@ -477,6 +481,12 @@ void draw()
 	draw_sim2();
 
 	draw_buttons();
+
+	if (!run_sim)
+	{
+		canvas->draw_rect(window_margin * 2, window_margin * 2, window_margin * 2, window_margin * 6, 0.0, 1.0, 0.0, VAO, VBO, EBO);
+		canvas->draw_rect(window_margin * 6, window_margin * 2, window_margin * 2, window_margin * 6, 0.0, 1.0, 0.0, VAO, VBO, EBO);
+	}
 
 	// Swap front and back buffers
 	glfwSwapBuffers(canvas->window);

@@ -10,10 +10,15 @@ class Particle;
 // They do NOT simulate the region themselves
 struct chunk
 {
-	bool active = false;
-	bool active_next = false;
 	int x = 0;
 	int y = 0;
+
+	bool active = true;
+	bool active_next = true;
+
+	int fill = 0;
+	int volume = 0;
+	bool abstracted = false;
 };
 
 class SandSim
@@ -23,6 +28,7 @@ public:
 	~SandSim() {};
 
 	bool in_bounds(int x, int y) { return x > -1 && x < x_size && y > -1 && y < y_size; };
+	bool chunk_in_bounds(int x, int y) { return x > -1 && x < x_size / chunk_size && y > -1 && y < y_size / chunk_size; };
 
 	Particle& get_tile(int x, int y);
 	void set_tile(int x, int y, int new_tile);
@@ -43,6 +49,11 @@ public:
 	void simulate_tile(int x, int y);
 
 	void make_active(int tile_x, int tile_y);
+	void make_chunk_active(int chunk_x, int chunk_y);
+
+	void abstractify_chunk(int chunk_x, int chunk_y, int material, int volume);
+	void deabstract(int chunk_x, int chunk_y);
+	int deabstractify_tile(int x, int y);
 
 	void clear();
 

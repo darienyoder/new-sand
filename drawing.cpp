@@ -49,6 +49,8 @@ void Canvas::initialize_window()
         std::cerr << "Failed to initialize GLEW" << std::endl;
         return;
     }
+
+    glfwGetWindowSize(window, &size.x, &size.y);
 }
 
 void Canvas::initialize_shaders()
