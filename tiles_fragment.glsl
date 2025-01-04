@@ -3,12 +3,16 @@
 layout(origin_upper_left) in vec4 gl_FragCoord;
 out vec4 color;
 
+// Data
 uniform isampler2D materialTexture;
+uniform ivec2 origin;
 
+// Scale
 uniform int tile_size;
 uniform vec2 window_size;
 uniform vec2 sim_size;
 
+// Camera
 uniform vec2 camera_position;
 uniform float camera_zoom;
 
@@ -16,12 +20,11 @@ const vec3 background = vec3(0.0);//vec3(0.125,0.086,0.51);
 
 const int outline_chunks = 1;
 
-
 int get_material(vec2 coords)
 {
-	if (coords.x < 0.0 || coords.y < 0.0 || coords.x >= sim_size.x || coords.y >= sim_size.y)
+	if (coords.x < origin.x || coords.y < origin.y || coords.x >= origin.x + sim_size.x || coords.y >= origin.y + sim_size.y)
 		return -1;
-	return texture(materialTexture, coords.yx / sim_size.yx).r;
+	return texture(materialTexture, (coords.yx - origin.yx) / sim_size.yx).r;
 }
 
 vec3 get_material_color(int material, float value)
@@ -121,7 +124,7 @@ void main()
 		color.rgb = vec3(1, 0, 0);
 		return;
 	}
-	if (material == 0)
+	if (outline_chunks == 1 && material == 0)
 	{
 		color.rgb = texture(materialTexture, coords.yx / sim_size.yx).g == 1.0 ? vec3(0.4, 0.2, 0) : background;
 		return;

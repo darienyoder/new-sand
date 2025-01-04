@@ -15,7 +15,7 @@ auto t = std::chrono::high_resolution_clock::now();
 auto last_sim_update = t;
 auto last_draw = t;
 
-SandSim sim(200, 120);
+SandSim sim(2000, 1200);
 InputManager* input = InputManager::getInstance();
 Canvas* canvas;
 
@@ -49,7 +49,8 @@ void setup()
 
 	camera_position[0] = sim.x_size * 0.5;
 	camera_position[1] = sim.y_size * 0.5;
-	camera_zoom = std::min(canvas->size.x / sim.x_size, canvas->size.y / sim.y_size);
+	//camera_zoom = std::max(std::min(float(canvas->size.x - window_margin * 5) / sim.x_size, float(canvas->size.y - window_margin * 5) / sim.y_size), 0.001f);
+	camera_zoom = 5;
 
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
@@ -421,7 +422,10 @@ void draw_sim2()
 	// note that this is allowed, the call to glVertexAttribPointer registered VBO as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-	auto materialMatrix = sim.get_texture_data();
+	int width = canvas->size.x / camera_zoom + 10, height = canvas->size.y / camera_zoom + 10;
+	int offset_x = camera_position[0] - canvas->size.x / camera_zoom / 2 - 5, offset_y = camera_position[1] - canvas->size.y / camera_zoom / 2 - 5;
+
+	auto materialMatrix = sim.get_texture_data(offset_x, offset_y, width, height);
 
 	//GLuint textureID;
 	//glGenTextures(1, &textureID);
@@ -434,7 +438,7 @@ void draw_sim2()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	// Upload the texture data
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32I, sim.y_size, sim.x_size, 0, GL_RG_INTEGER, GL_INT, materialMatrix.data());
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32I, height, width, 0, GL_RG_INTEGER, GL_INT, materialMatrix.data());
 
 	// Generate mipmaps (optional, depending on your use case)
 	glGenerateMipmap(GL_TEXTURE_2D);
@@ -454,10 +458,11 @@ void draw_sim2()
 	
 	float fl_winsize[2] = { float(canvas->size.x), float(canvas->size.y) };
 	glUniform2fv(glGetUniformLocation(TILE_SHADER, "window_size"), 1, fl_winsize);
-	glUniform2f(glGetUniformLocation(TILE_SHADER, "sim_size"), sim.x_size, sim.y_size);
+	glUniform2f(glGetUniformLocation(TILE_SHADER, "sim_size"), width, height);
 	glUniform2fv(glGetUniformLocation(TILE_SHADER, "camera_position"), 1, camera_position);
-	glUniform1i(glGetUniformLocation(TILE_SHADER, "tile_size"), tile_size);
 	glUniform1f(glGetUniformLocation(TILE_SHADER, "camera_zoom"), camera_zoom);
+	glUniform1i(glGetUniformLocation(TILE_SHADER, "tile_size"), tile_size);
+	glUniform2i(glGetUniformLocation(TILE_SHADER, "origin"), offset_x, offset_y);
 
 	////////////////////////////////////////////////////////////////////////
 

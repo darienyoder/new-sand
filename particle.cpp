@@ -19,8 +19,8 @@ bool Powder::tick()
 	if (get_move_speed(x, y + 1) > move_chance)
 	{
 		move_to(x, y + 1);
-		//if (sim->is_tile_empty(x, y + 3))
-		//	sim->launch(x, y, 0, 1);
+		if (sim->is_tile_empty(x, y + 3))
+			sim->launch(x, y, 0, 1);
 		return true;
 	}
 	else
@@ -74,8 +74,8 @@ bool Liquid::tick()
 	if (can_move_through(x, y + 1))
 	{
 		move_to(x, y + 1);
-		//if (sim->is_tile_empty(x, y + 3))
-		//	sim->launch(x, y, 0, 1);
+		if (sim->is_tile_empty(x, y + 3))
+			sim->launch(x, y, 0, 1);
 		return true;
 	}
 	else

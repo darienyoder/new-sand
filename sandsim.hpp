@@ -19,6 +19,7 @@ struct chunk
 	int fill = 0;
 	int volume = 0;
 	bool abstracted = false;
+	bool just_deabstractified = false;
 };
 
 class SandSim
@@ -57,7 +58,7 @@ public:
 
 	void clear();
 
-	std::vector<int> get_texture_data();
+	std::vector<int> get_texture_data(int origin_x, int origin_y, int width, int height);
 
 	int x_size = 0, y_size = 0;
 	int time = 0;

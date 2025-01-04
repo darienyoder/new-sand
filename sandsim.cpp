@@ -191,7 +191,7 @@ void SandSim::update()
 	for (int chunk_x = 0; chunk_x < x_size / chunk_size; ++chunk_x)
 	for (int chunk_y = y_size / chunk_size - 1; chunk_y > -1; --chunk_y)
 		// If that chunk is active...
-		if (chunks[chunk_x][chunk_y].active || true)
+		if (chunks[chunk_x][chunk_y].active)
 		{
 			if (chunks[chunk_x][chunk_y].abstracted)
 			{
@@ -220,20 +220,33 @@ void SandSim::update()
 									chunks[chunk_x + movement[i * 2] * dir][chunk_y + movement[i * 2 + 1]].fill = chunks[chunk_x][chunk_y].fill;
 									chunks[chunk_x + movement[i * 2] * dir][chunk_y + movement[i * 2 + 1]].volume = 0;
 								}
-								int transfer = std::min(std::min(chunks[chunk_x][chunk_y].volume, chunk_size / 2), chunk_size * chunk_size - adjacent_chunk->volume);
+								int transfer = std::min(std::min(chunks[chunk_x][chunk_y].volume, chunk_size), chunk_size * chunk_size - adjacent_chunk->volume);
 								chunks[chunk_x][chunk_y].volume -= transfer;
 								chunks[chunk_x + movement[i * 2] * dir][chunk_y + movement[i * 2 + 1]].volume += transfer;
 
-								if (chunks[chunk_x][chunk_y].volume <= 0)
-								{
-									chunks[chunk_x][chunk_y].fill = EMPTY;
-									chunks[chunk_x][chunk_y].volume = 0;
-								}
-
 								make_chunk_active(chunk_x, chunk_y);
+
 								break;
 							}
 						}
+					}
+
+					if (chunk_y != y_size / chunk_size - 1 && !chunks[chunk_x][chunk_y + 1].abstracted)
+					{
+						for (int bottom_tile = 0; bottom_tile < chunk_size; bottom_tile++)
+						{
+							if (chunks[chunk_x][chunk_y].volume > 0 && get_tile(chunk_x * chunk_size + bottom_tile, (chunk_y + 1) * chunk_size).material == EMPTY)
+							{
+								chunks[chunk_x][chunk_y].volume -= 1;
+								set_tile(chunk_x * chunk_size + bottom_tile, (chunk_y + 1) * chunk_size, chunks[chunk_x][chunk_y].fill);
+							}
+						}
+					}
+
+					if (chunks[chunk_x][chunk_y].volume <= 0)
+					{
+						chunks[chunk_x][chunk_y].fill = EMPTY;
+						chunks[chunk_x][chunk_y].volume = 0;
 					}
 				}
 			}
@@ -241,6 +254,7 @@ void SandSim::update()
 			{
 				chunks[chunk_x][chunk_y].fill = EMPTY;
 				chunks[chunk_x][chunk_y].volume = 0;
+				bool solid_floor = true;
 
 				// Divide the chunk into checkerboards
 				for (int i_x = 0; i_x < spacing; ++i_x)
@@ -267,13 +281,17 @@ void SandSim::update()
 						}
 						if (tile != EMPTY)
 							chunks[chunk_x][chunk_y].volume += 1;
+						else if (tile_y == (chunk_y + 1) * chunk_size - 1)
+							solid_floor = false;
 
-						simulate_tile( tile_x, tile_y );
+						if (!chunks[chunk_x][chunk_y].just_deabstractified)
+							simulate_tile( tile_x, tile_y );
 					}
 				if (chunks[chunk_x][chunk_y].fill != -1)
 				{
 					abstractify_chunk(chunk_x, chunk_y, chunks[chunk_x][chunk_y].fill, chunks[chunk_x][chunk_y].volume);
 				}
+				chunks[chunk_x][chunk_y].just_deabstractified = false;
 			}
 		}
 }
@@ -335,31 +353,32 @@ void SandSim::make_active(int tile_x, int tile_y)
 		chunks[tile_x / chunk_size][tile_y / chunk_size + 1].active_next = true;
 }
 
-std::vector<int> SandSim::get_texture_data()
+std::vector<int> SandSim::get_texture_data(int origin_x, int origin_y, int width, int height)
 {
 	std::vector<int> materialMatrix;
 
-	materialMatrix.resize(x_size * y_size * 2);
-	for (size_t i = 0; i < x_size; ++i)
+	materialMatrix.resize(width * height * 2);
+	for (size_t i = 0; i < width; ++i)
 	{
-		for (size_t j = 0; j < y_size; ++j)
+		for (size_t j = 0; j < height; ++j)
 		{
-			if (chunks[i / chunk_size][j / chunk_size].abstracted)
+			if (!in_bounds(origin_x + i, origin_y + j))
 			{
-				materialMatrix[i * y_size * 2 + j * 2] = deabstractify_tile(i, j);
-				//if (chunks[i / chunk_size][j / chunk_size].fill != STEAM)
-				//	materialMatrix[i * y_size * 2 + j * 2] = chunks[i / chunk_size][j / chunk_size].fill * int((chunk_size - (j % chunk_size)) * chunk_size + (i % chunk_size) < chunks[i / chunk_size][j / chunk_size].volume);
-				//else
-				//	materialMatrix[i * y_size * 2 + j * 2] = chunks[i / chunk_size][j / chunk_size].fill * int((rand() % (chunk_size*chunk_size)) < chunks[i / chunk_size][j / chunk_size].volume);
-				materialMatrix[i * y_size * 2 + j * 2 + 1] = 1;
+				materialMatrix[i * height * 2 + j * 2] = -1;
+				materialMatrix[i * height * 2 + j * 2 + 1] = 0;
+			}
+			else if (chunks[(origin_x + i) / chunk_size][(origin_y + j) / chunk_size].abstracted)
+			{
+				materialMatrix[i * height * 2 + j * 2] = deabstractify_tile(origin_x + i, origin_y + j);
+				materialMatrix[i * height * 2 + j * 2 + 1] = 1;
 			}
 			else
 			{
-				if (Aerial* aer = dynamic_cast<Aerial*>(tiles[i][j]))
-					materialMatrix[i * y_size * 2 + j * 2] = aer->p->material;
+				if (Aerial* aer = dynamic_cast<Aerial*>(tiles[origin_x + i][origin_y + j]))
+					materialMatrix[i * height * 2 + j * 2] = aer->p->material;
 				else
-					materialMatrix[i * y_size * 2 + j * 2] = tiles[i][j]->material;
-				materialMatrix[i * y_size * 2 + j * 2 + 1] = chunks[i / chunk_size][j / chunk_size].abstracted;
+					materialMatrix[i * height * 2 + j * 2] = tiles[origin_x + i][origin_y + j]->material;
+				materialMatrix[i * height * 2 + j * 2 + 1] = chunks[(origin_x + i) / chunk_size][(origin_y + j) / chunk_size].abstracted;
 			}
 		}
 	}
@@ -577,6 +596,7 @@ void SandSim::deabstract(int chunk_x, int chunk_y)
 		{
 			set_tile(chunk_x * chunk_size + x, chunk_y * chunk_size + y, deabstractify_tile(chunk_x * chunk_size + x, chunk_y * chunk_size + y));
 		}
+		chunks[chunk_x][chunk_y].just_deabstractified = true;
 	}
 }
 
