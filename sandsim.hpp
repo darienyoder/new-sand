@@ -58,7 +58,7 @@ public:
 
 	void clear();
 
-	std::vector<int> get_texture_data(int origin_x, int origin_y, int width, int height);
+	std::vector<int> get_texture_data(int origin_x, int origin_y, int width, int height, int precision = 1);
 
 	int x_size = 0, y_size = 0;
 	int time = 0;

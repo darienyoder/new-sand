@@ -169,39 +169,14 @@ void get_input()
 		mouse_action = 4;
 	}
 
-	if (input->is_pressed(GLFW_KEY_4))
+	if (input->is_pressed(GLFW_KEY_D))
 	{
-		mouse_action = 5;
-	}
-
-	if (input->is_pressed(GLFW_KEY_5))
-	{
-		mouse_action = 6;
-	}
-
-	if (input->is_pressed(GLFW_KEY_6))
-	{
-		mouse_action = 7;
-	}
-
-	if (input->is_pressed(GLFW_KEY_7))
-	{
-		mouse_action = 10;
-	}
-
-	if (input->is_pressed(GLFW_KEY_8))
-	{
-		mouse_action = 11;
-	}
-
-	if (input->is_pressed(GLFW_KEY_9))
-	{
-		mouse_action = 12;
-	}
-
-	if (input->is_pressed(GLFW_KEY_0))
-	{
-		mouse_action = 13;
+		for (int x = 0; x < sim.x_size / sim.chunk_size; x++)
+			for (int y = 0; y < sim.y_size / sim.chunk_size; y++)
+			{
+				sim.deabstract(x, y);
+				sim.chunks[x][y].just_deabstractified = false;
+			}
 	}
 }
 
@@ -424,8 +399,16 @@ void draw_sim2()
 
 	int width = canvas->size.x / camera_zoom + 10, height = canvas->size.y / camera_zoom + 10;
 	int offset_x = camera_position[0] - canvas->size.x / camera_zoom / 2 - 5, offset_y = camera_position[1] - canvas->size.y / camera_zoom / 2 - 5;
+	
+	int precision = 1;
+	if (width * height > 125'000)
+	{
+		precision = 2;
+		if (width * height > 125'000 * 4)
+			precision = 4;
+	}
 
-	auto materialMatrix = sim.get_texture_data(offset_x, offset_y, width, height);
+	auto materialMatrix = sim.get_texture_data(offset_x, offset_y, width, height, precision);
 
 	//GLuint textureID;
 	//glGenTextures(1, &textureID);
@@ -438,7 +421,7 @@ void draw_sim2()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	// Upload the texture data
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32I, height, width, 0, GL_RG_INTEGER, GL_INT, materialMatrix.data());
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32I, height / precision, width / precision, 0, GL_RG_INTEGER, GL_INT, materialMatrix.data());
 
 	// Generate mipmaps (optional, depending on your use case)
 	glGenerateMipmap(GL_TEXTURE_2D);
@@ -463,6 +446,8 @@ void draw_sim2()
 	glUniform1f(glGetUniformLocation(TILE_SHADER, "camera_zoom"), camera_zoom);
 	glUniform1i(glGetUniformLocation(TILE_SHADER, "tile_size"), tile_size);
 	glUniform2i(glGetUniformLocation(TILE_SHADER, "origin"), offset_x, offset_y);
+
+	glUniform1i(glGetUniformLocation(TILE_SHADER, "tile_precision"), precision);
 
 	////////////////////////////////////////////////////////////////////////
 

@@ -6,6 +6,7 @@ out vec4 color;
 // Data
 uniform isampler2D materialTexture;
 uniform ivec2 origin;
+uniform int tile_precision;
 
 // Scale
 uniform int tile_size;
@@ -18,7 +19,7 @@ uniform float camera_zoom;
 
 const vec3 background = vec3(0.0);//vec3(0.125,0.086,0.51);
 
-const int outline_chunks = 1;
+const int outline_chunks = 0;
 
 int get_material(vec2 coords)
 {
@@ -124,7 +125,7 @@ void main()
 		color.rgb = vec3(1, 0, 0);
 		return;
 	}
-	if (outline_chunks == 1 && material == 0)
+	if (outline_chunks == 1 && material == 0 && tile_precision == 1)
 	{
 		color.rgb = texture(materialTexture, coords.yx / sim_size.yx).g == 1.0 ? vec3(0.4, 0.2, 0) : background;
 		return;

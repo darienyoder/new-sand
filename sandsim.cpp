@@ -353,32 +353,32 @@ void SandSim::make_active(int tile_x, int tile_y)
 		chunks[tile_x / chunk_size][tile_y / chunk_size + 1].active_next = true;
 }
 
-std::vector<int> SandSim::get_texture_data(int origin_x, int origin_y, int width, int height)
+std::vector<int> SandSim::get_texture_data(int origin_x, int origin_y, int width, int height, int precision)
 {
 	std::vector<int> materialMatrix;
 
-	materialMatrix.resize(width * height * 2);
-	for (size_t i = 0; i < width; ++i)
+	materialMatrix.resize(width * height * 2 / (precision*precision));
+	for (size_t i = 0; i < width / precision; ++i)
 	{
-		for (size_t j = 0; j < height; ++j)
+		for (size_t j = 0; j < height / precision; ++j)
 		{
-			if (!in_bounds(origin_x + i, origin_y + j))
+			if (!in_bounds(origin_x + i * precision, origin_y + j * precision))
 			{
-				materialMatrix[i * height * 2 + j * 2] = -1;
-				materialMatrix[i * height * 2 + j * 2 + 1] = 0;
+				materialMatrix[i * (height / precision) * 2 + j * 2] = -1;
+				materialMatrix[i * (height / precision) * 2 + j * 2 + 1] = 0;
 			}
-			else if (chunks[(origin_x + i) / chunk_size][(origin_y + j) / chunk_size].abstracted)
+			else if (chunks[(origin_x + i * precision) / chunk_size][(origin_y + j * precision) / chunk_size].abstracted)
 			{
-				materialMatrix[i * height * 2 + j * 2] = deabstractify_tile(origin_x + i, origin_y + j);
-				materialMatrix[i * height * 2 + j * 2 + 1] = 1;
+				materialMatrix[i * (height / precision) * 2 + j * 2] = deabstractify_tile(origin_x + i * precision, origin_y + j * precision);
+				materialMatrix[i * (height / precision) * 2 + j * 2 + 1] = 1;
 			}
 			else
 			{
-				if (Aerial* aer = dynamic_cast<Aerial*>(tiles[origin_x + i][origin_y + j]))
-					materialMatrix[i * height * 2 + j * 2] = aer->p->material;
+				if (Aerial* aer = dynamic_cast<Aerial*>(tiles[origin_x + i * precision][origin_y + j * precision]))
+					materialMatrix[i * (height / precision) * 2 + j * 2] = aer->p->material;
 				else
-					materialMatrix[i * height * 2 + j * 2] = tiles[origin_x + i][origin_y + j]->material;
-				materialMatrix[i * height * 2 + j * 2 + 1] = chunks[(origin_x + i) / chunk_size][(origin_y + j) / chunk_size].abstracted;
+					materialMatrix[i * (height / precision) * 2 + j * 2] = tiles[origin_x + i * precision][origin_y + j * precision]->material;
+				materialMatrix[i * (height / precision) * 2 + j * 2 + 1] = chunks[(origin_x + i * precision) / chunk_size][(origin_y + j * precision) / chunk_size].abstracted;
 			}
 		}
 	}
