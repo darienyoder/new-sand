@@ -51,6 +51,8 @@ public:
 	SandSim* sim = 0;
 };
 
+extern Particle* sample[15];
+
 class Air : virtual public Particle {};
 
 class Powder : virtual public Particle

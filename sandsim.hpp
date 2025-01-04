@@ -10,15 +10,17 @@ class Particle;
 // They do NOT simulate the region themselves
 struct chunk
 {
+	// Position
 	int x = 0;
 	int y = 0;
 
-	bool active = true;
+	bool active = true; // Simulates if true
 	bool active_next = true;
 
-	int fill = 0;
-	int volume = 0;
-	bool abstracted = false;
+	// Abstract
+	bool abstracted = false; // Contains only one type of element
+	int fill = 0; // Type of element
+	int volume = 0; // Quantity of element
 	bool just_deabstractified = false;
 };
 
@@ -40,22 +42,25 @@ public:
 	void explode(int x, int y, int force);
 	void explode_path(int x1, int y1, int x2, int y2, float force);
 
+	// Turn into aerial particle
 	void launch(int x, int y, int vel_x, int vel_y, int mode = 0, float param = 0.0);
 
+	// In bounds and contains nothing
 	bool is_tile_empty(int x, int y);
 
 	Particle* create_element(int material);
 
-	void update();
-	void simulate_tile(int x, int y);
+	void update(); // Step entire simulation
+	void simulate_tile(int x, int y); // Step 
 
-	void make_active(int tile_x, int tile_y);
-	void make_chunk_active(int chunk_x, int chunk_y);
+	void make_active(int tile_x, int tile_y); // For single tiles
+	void make_chunk_active(int chunk_x, int chunk_y); // For abstracted chunks
 
 	void abstractify_chunk(int chunk_x, int chunk_y, int material, int volume);
 	void deabstract(int chunk_x, int chunk_y);
 	int deabstractify_tile(int x, int y);
 
+	// Delete everything
 	void clear();
 
 	std::vector<int> get_texture_data(int origin_x, int origin_y, int width, int height, int precision = 1);

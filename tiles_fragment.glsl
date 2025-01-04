@@ -19,7 +19,7 @@ uniform float camera_zoom;
 
 const vec3 background = vec3(0.0);//vec3(0.125,0.086,0.51);
 
-const int outline_chunks = 0;
+const int outline_chunks = 1;
 
 int get_material(vec2 coords)
 {
@@ -122,7 +122,8 @@ void main()
 
 	if (outline_chunks == 1 && material != -1 && (int(coords.x * 2) % 40 == 0 || int(coords.y * 2) % 40 == 0))
 	{
-		color.rgb = vec3(1, 0, 0);
+		if (texture(materialTexture, (coords.yx - origin.yx) / sim_size.yx).g == 1.0)
+			color.rgb = vec3(1, 0, 0);
 		return;
 	}
 	if (outline_chunks == 1 && material == 0 && tile_precision == 1)

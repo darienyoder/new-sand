@@ -1,5 +1,23 @@
 #include "particle.hpp"
 
+Particle* sample[15] = {
+		new Air,
+		new Sand,
+		new Water,
+		new Ice,
+		new Steam,
+		new Dirt,
+		new Stone,
+		new Lava,
+		new Oil,
+		new Acid,
+		new Fire,
+		new Smoke,
+		new Wood,
+		new Aerial,
+		new Firework,
+};
+
 // REQUIRES: x_ and y_ are in bounds
 // ENSURES: x and y values are swapped; positions in sim are swapped
 void Particle::swap(int x_, int y_)

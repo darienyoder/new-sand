@@ -43,14 +43,16 @@ void cleanup()
 
 void setup()
 {
+	for (int i = 0; i < 15; i++)
+		sample[i]->material = i;
+
 	canvas = Canvas::getInstance();
 
 	input->setup(canvas->window);
 
 	camera_position[0] = sim.x_size * 0.5;
 	camera_position[1] = sim.y_size * 0.5;
-	//camera_zoom = std::max(std::min(float(canvas->size.x - window_margin * 5) / sim.x_size, float(canvas->size.y - window_margin * 5) / sim.y_size), 0.001f);
-	camera_zoom = 5;
+	camera_zoom = std::max(std::min(float(canvas->size.x - window_margin * 5) / sim.x_size, float(canvas->size.y - window_margin * 5) / sim.y_size), 0.001f);
 
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
@@ -73,6 +75,24 @@ void setup()
 
 	// Unbind the VAO
 	glBindVertexArray(0);
+
+
+	/*
+	// Test chunk abstraction fill
+	sim.chunks[0][0].fill = STONE;
+	sim.chunks[0][0].abstracted = true;
+	for (int i = 0; i < sim.chunk_size * sim.chunk_size + 1; i++)
+	{
+		sim.chunks[0][0].volume = i;
+		int count = 0;
+		for (int x = 0; x < sim.chunk_size; x++)
+		for (int y = 0; y < sim.chunk_size; y++)
+		{
+			count += int(sim.get_tile(x, y).material == STONE);
+		}
+		std::cout << i << " : " << count << " | " << (i == count ? "" : "ERROR") << "\n";
+	}
+	*/
 }
 
 void screen_to_sim(float x, float y, float output[])

@@ -30,9 +30,12 @@ SandSim::SandSim(int width, int height)
 
 void SandSim::clear()
 {
+	// Delete all tiles
 	for (int x = 0; x < x_size; x++)
 	for (int y = 0; y < y_size; y++)
 		set_tile(x, y, EMPTY);
+
+	// Deabstractify all chunks
 	for (int x = 0; x < x_size / chunk_size; x++)
 	for (int y = 0; y < y_size / chunk_size; y++)
 	{
@@ -47,7 +50,7 @@ Particle& SandSim::get_tile(int x, int y)
 	if (in_bounds(x, y))
 	{
 		if (chunks[x / chunk_size][y / chunk_size].abstracted)
-			return *create_element(deabstractify_tile(x, y));
+			return *sample[deabstractify_tile(x, y)];
 		else
 			return *tiles[x][y];
 	}
@@ -87,8 +90,10 @@ void SandSim::set_tile(int x, int y, int material)
 
 void SandSim::swap_tiles(int x1, int y1, int x2, int y2)
 {
+	// Tiles must be valid
 	if (in_bounds(x1, y1) && in_bounds(x2, y2))
 	{
+		// Ensure chunks are not abstracted
 		if (chunks[x1 / chunk_size][y1 / chunk_size].abstracted)
 			deabstract(x1 / chunk_size, y1 / chunk_size);
 		if (chunks[x2 / chunk_size][y2 / chunk_size].abstracted)
@@ -102,13 +107,13 @@ void SandSim::swap_tiles(int x1, int y1, int x2, int y2)
 		*p2 = temp;
 
 		// Swap x and y values
-
 		tiles[x1][y1]->x = x1;
 		tiles[x1][y1]->y = y1;
 
 		tiles[x2][y2]->x = x2;
 		tiles[x2][y2]->y = y2;
 
+		// Activate chunks
 		make_active(x1, y1);
 		make_active(x2, y2);
 	}
@@ -178,6 +183,7 @@ void SandSim::update()
 {
 	++time;
 
+	// Determine active chunks
 	for (int chunk_x = 0; chunk_x < x_size / chunk_size; ++chunk_x)
 	for (int chunk_y = 0; chunk_y < y_size / chunk_size; ++chunk_y)
 	{
@@ -193,33 +199,58 @@ void SandSim::update()
 		// If that chunk is active...
 		if (chunks[chunk_x][chunk_y].active)
 		{
+			// If abstracted
 			if (chunks[chunk_x][chunk_y].abstracted)
 			{
+				// Skip empty chunks
 				if (chunks[chunk_x][chunk_y].fill != EMPTY)
 				{
+					// Get state of chunk fill
+					int state = 0;
+					if (Powder* pow = dynamic_cast<Powder*>(sample[chunks[chunk_x][chunk_y].fill]))
+						state = SAND;
+					else if (Liquid* liq = dynamic_cast<Liquid*>(sample[chunks[chunk_x][chunk_y].fill]))
+						state = WATER;
+					else if (Gas* gas = dynamic_cast<Gas*>(sample[chunks[chunk_x][chunk_y].fill]))
+						state = STEAM;
+
+					// Valid moves for each state of matter
 					std::vector<int> movement;
-					if (chunks[chunk_x][chunk_y].fill == SAND)
+					if (state == SAND)
 						movement = { 0, 1, 1, 1, -1, 1 };
-					else if (chunks[chunk_x][chunk_y].fill == WATER)
+					else if (state == WATER)
 						movement = { 0, 1, 1, 1, -1, 1, 1, 0, -1, 0 };
-					else if (chunks[chunk_x][chunk_y].fill == STEAM)
+					else if (state == STEAM)
 						movement = { 0, -1, 1, -1, -1, 1, -1, 0, -1, 0 };
 
 					int dir = rand() % 2 == 0 ? -1 : 1;
 
+					// For each 
 					for (int i = 0; i < movement.size() / 2; i++)
 					{
+						// If adjacent chunk in bounds...
 						if (chunk_x + movement[i * 2] * dir >= 0 && chunk_y + movement[i * 2 + 1] >= 0 && chunk_x + movement[i * 2] * dir < x_size / chunk_size && chunk_y + movement[i * 2 + 1] < y_size / chunk_size)
 						{
 							chunk* adjacent_chunk = &chunks[chunk_x + movement[i * 2] * dir][chunk_y + movement[i * 2 + 1]];
 							
-							if (adjacent_chunk->abstracted && adjacent_chunk->volume < chunk_size * chunk_size && (movement[i * 2] == 0 || adjacent_chunk->volume < chunks[chunk_x][chunk_y].volume) && (adjacent_chunk->fill == chunks[chunk_x][chunk_y].fill || adjacent_chunk->fill == EMPTY))
+								// If chunk is abstracted
+							if (adjacent_chunk->abstracted
+								// and has space
+								&& adjacent_chunk->volume < chunk_size * chunk_size
+								// and, if spreading horizontally, is spreading to a less full chunk
+								&& (movement[i * 2 + 1] != 0 || chunks[chunk_x][chunk_y].volume > adjacent_chunk->volume )
+								// and the fills match
+								&& (adjacent_chunk->fill == chunks[chunk_x][chunk_y].fill || adjacent_chunk->fill == EMPTY)
+								// and an arbitrary rule to make liquids less jittery
+								&& (state != WATER || movement[i * 2 + 1] != 0 || chunks[chunk_x][chunk_y].volume - adjacent_chunk->volume > chunk_size))
 							{
+								// Set empty chunks to have same fill
 								if (adjacent_chunk->fill == EMPTY)
 								{
 									chunks[chunk_x + movement[i * 2] * dir][chunk_y + movement[i * 2 + 1]].fill = chunks[chunk_x][chunk_y].fill;
 									chunks[chunk_x + movement[i * 2] * dir][chunk_y + movement[i * 2 + 1]].volume = 0;
 								}
+								// Transfer no more than source can give or sink can take
 								int transfer = std::min(std::min(chunks[chunk_x][chunk_y].volume, chunk_size), chunk_size * chunk_size - adjacent_chunk->volume);
 								chunks[chunk_x][chunk_y].volume -= transfer;
 								chunks[chunk_x + movement[i * 2] * dir][chunk_y + movement[i * 2 + 1]].volume += transfer;
@@ -231,7 +262,9 @@ void SandSim::update()
 						}
 					}
 
-					if (chunk_y != y_size / chunk_size - 1 && !chunks[chunk_x][chunk_y + 1].abstracted)
+					if (false && (state == SAND || state == WATER)
+						&& chunk_y != y_size / chunk_size - 1
+						&& !chunks[chunk_x][chunk_y + 1].abstracted)
 					{
 						for (int bottom_tile = 0; bottom_tile < chunk_size; bottom_tile++)
 						{
@@ -250,6 +283,7 @@ void SandSim::update()
 					}
 				}
 			}
+			// If not abstracted
 			else
 			{
 				chunks[chunk_x][chunk_y].fill = EMPTY;
@@ -266,12 +300,14 @@ void SandSim::update()
 						int tile_x = chunk_x * chunk_size + (chunk_size - 1 - x * spacing - i_x) * sim_dir + (x * spacing + i_x) * (1 - sim_dir);
 						int tile_y = chunk_y * chunk_size + (chunk_size - 1 - y * spacing - i_y) * sim_dir + (y * spacing + i_y) * (1 - sim_dir);
 						int tile = tiles[tile_x][tile_y]->material;
+						// Aerial tiles read as their cargo
 						if (tile == AERIAL)
 						{
 							Aerial* aer = dynamic_cast<Aerial*>(tiles[tile_x][tile_y]);
 							tile = aer->p->material;
 						}
 
+						// 
 						if (chunks[chunk_x][chunk_y].fill != -1 && chunks[chunk_x][chunk_y].fill != tile && tile != EMPTY)
 						{
 							if (chunks[chunk_x][chunk_y].fill == EMPTY)
@@ -279,6 +315,8 @@ void SandSim::update()
 							else
 								chunks[chunk_x][chunk_y].fill = -1;
 						}
+
+
 						if (tile != EMPTY)
 							chunks[chunk_x][chunk_y].volume += 1;
 						else if (tile_y == (chunk_y + 1) * chunk_size - 1)
@@ -289,7 +327,21 @@ void SandSim::update()
 					}
 				if (chunks[chunk_x][chunk_y].fill != -1)
 				{
-					abstractify_chunk(chunk_x, chunk_y, chunks[chunk_x][chunk_y].fill, chunks[chunk_x][chunk_y].volume);
+					if (chunks[chunk_x][chunk_y].fill == 0)
+						abstractify_chunk(chunk_x, chunk_y, chunks[chunk_x][chunk_y].fill, chunks[chunk_x][chunk_y].volume);
+					else
+					{
+						int state = 0;
+						if (Powder* pow = dynamic_cast<Powder*>(sample[chunks[chunk_x][chunk_y].fill]))
+							state = SAND;
+						else if (Liquid* liq = dynamic_cast<Liquid*>(sample[chunks[chunk_x][chunk_y].fill]))
+							state = WATER;
+						else if (Gas* gas = dynamic_cast<Gas*>(sample[chunks[chunk_x][chunk_y].fill]))
+							state = STEAM;
+
+						if (state != 0)
+							abstractify_chunk(chunk_x, chunk_y, chunks[chunk_x][chunk_y].fill, chunks[chunk_x][chunk_y].volume);
+					}
 				}
 				chunks[chunk_x][chunk_y].just_deabstractified = false;
 			}
@@ -370,7 +422,7 @@ std::vector<int> SandSim::get_texture_data(int origin_x, int origin_y, int width
 			else if (chunks[(origin_x + i * precision) / chunk_size][(origin_y + j * precision) / chunk_size].abstracted)
 			{
 				materialMatrix[i * (height / precision) * 2 + j * 2] = deabstractify_tile(origin_x + i * precision, origin_y + j * precision);
-				materialMatrix[i * (height / precision) * 2 + j * 2 + 1] = 1;
+				materialMatrix[i * (height / precision) * 2 + j * 2 + 1] = chunks[(origin_x + i * precision) / chunk_size][(origin_y + j * precision) / chunk_size].active;
 			}
 			else
 			{
@@ -378,7 +430,7 @@ std::vector<int> SandSim::get_texture_data(int origin_x, int origin_y, int width
 					materialMatrix[i * (height / precision) * 2 + j * 2] = aer->p->material;
 				else
 					materialMatrix[i * (height / precision) * 2 + j * 2] = tiles[origin_x + i * precision][origin_y + j * precision]->material;
-				materialMatrix[i * (height / precision) * 2 + j * 2 + 1] = chunks[(origin_x + i * precision) / chunk_size][(origin_y + j * precision) / chunk_size].abstracted;
+				materialMatrix[i * (height / precision) * 2 + j * 2 + 1] = chunks[(origin_x + i * precision) / chunk_size][(origin_y + j * precision) / chunk_size].active;
 			}
 		}
 	}
