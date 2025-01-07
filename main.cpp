@@ -10,12 +10,12 @@
 bool game_is_running = false;
 float time_since_last_frame = 0.0;
 int target_fps = 60;
-int tps = 60;
+int tps = 200;
 auto t = std::chrono::high_resolution_clock::now();
 auto last_sim_update = t;
 auto last_draw = t;
 
-SandSim sim(2000, 1200);
+SandSim sim(400, 240);
 InputManager* input = InputManager::getInstance();
 Canvas* canvas;
 
@@ -106,7 +106,7 @@ void place_tile(int new_tile, int state = 0)
 	float tile[2];
 	screen_to_sim(input->mouse_x, input->mouse_y, tile);
 
-	int radius = 3;
+	int radius = 5;
 	if (mouse_action == 15) radius = 1;
 
 	for (int x = -radius; x < radius; x++)
@@ -420,8 +420,13 @@ void draw_sim2()
 	int width = canvas->size.x / camera_zoom + 10, height = canvas->size.y / camera_zoom + 10;
 	int offset_x = camera_position[0] - canvas->size.x / camera_zoom / 2 - 5, offset_y = camera_position[1] - canvas->size.y / camera_zoom / 2 - 5;
 	
+	width = (width / sim.chunk_size + 1) * sim.chunk_size;
+	height = (height / sim.chunk_size + 1) * sim.chunk_size;
+	offset_x = (offset_x / sim.chunk_size) * sim.chunk_size;
+	offset_y = (offset_y / sim.chunk_size) * sim.chunk_size;
+
 	int precision = 1;
-	if (width * height > 125'000)
+	if (false && width * height > 125'000)
 	{
 		precision = 2;
 		if (width * height > 125'000 * 4)
@@ -477,7 +482,7 @@ void draw_sim2()
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 	glBindVertexArray(0); // Unbind the VAO
 
-	materialMatrix.~vector();
+	//materialMatrix.~vector();
 	//textureID.~GLuint();
 }
 
@@ -504,21 +509,35 @@ void draw()
 	glfwPollEvents();
 }
 
+float update_time = 0.0;
+float draw_time = 0.0;
+
 int main(int argc, char* argv[])
 {
 	setup();
 
+	auto now = std::chrono::high_resolution_clock::now();
+
 	while (!glfwWindowShouldClose(canvas->window))
 	{
 		get_input();
-		
+
 		update();
+
+		update_time += compare_times(now, std::chrono::high_resolution_clock::now());
+		now = std::chrono::high_resolution_clock::now();
 
 		if (compare_times(last_draw, t) > 1.0 / target_fps)
 			draw();
+
+		draw_time += compare_times(now, std::chrono::high_resolution_clock::now());
+		now = std::chrono::high_resolution_clock::now();
 	}
 
 	cleanup();
+
+	std::cout << "UPDATE: " << int(update_time / (update_time + draw_time) * 100) << "%\n";
+	std::cout << "  DRAW: " << int(draw_time / (update_time + draw_time) * 100) << "%\n";
 
 	return 0;
 }

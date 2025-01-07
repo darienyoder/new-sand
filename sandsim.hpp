@@ -63,8 +63,6 @@ public:
 	// Delete everything
 	void clear();
 
-	std::vector<int> get_texture_data(int origin_x, int origin_y, int width, int height, int precision = 1);
-
 	int x_size = 0, y_size = 0;
 	int time = 0;
 
@@ -72,6 +70,15 @@ public:
 
 	chunk** chunks = 0;
 	const int chunk_size = 20;
+
+
+	std::vector<int>& get_texture_data(int origin_x, int origin_y, int width, int height, int precision = 1);
+
+	// Saved texture to avoid redrawing every frame
+	std::vector<int> texture;
+	int tex_origin[2] = { -234567, 34678 };
+	int tex_size[2] = { -234567, 34678 };
+	int tex_precision = 0;
 };
 
 #endif

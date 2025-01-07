@@ -19,7 +19,7 @@ uniform float camera_zoom;
 
 const vec3 background = vec3(0.0);//vec3(0.125,0.086,0.51);
 
-const int outline_chunks = 1;
+const int outline_chunks = 0;
 
 int get_material(vec2 coords)
 {

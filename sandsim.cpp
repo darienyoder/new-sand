@@ -200,7 +200,7 @@ void SandSim::update()
 		if (chunks[chunk_x][chunk_y].active)
 		{
 			// If abstracted
-			if (chunks[chunk_x][chunk_y].abstracted)
+			if (chunks[chunk_x][chunk_y].abstracted && false)
 			{
 				// Skip empty chunks
 				if (chunks[chunk_x][chunk_y].fill != EMPTY)
@@ -405,36 +405,53 @@ void SandSim::make_active(int tile_x, int tile_y)
 		chunks[tile_x / chunk_size][tile_y / chunk_size + 1].active_next = true;
 }
 
-std::vector<int> SandSim::get_texture_data(int origin_x, int origin_y, int width, int height, int precision)
+std::vector<int>& SandSim::get_texture_data(int origin_x, int origin_y, int width, int height, int precision)
 {
-	std::vector<int> materialMatrix;
+	origin_x = (origin_x / chunk_size) * chunk_size;
+	origin_y = (origin_y / chunk_size) * chunk_size;
+	width = (width / chunk_size) * chunk_size;
+	height = (height / chunk_size) * chunk_size;
 
-	materialMatrix.resize(width * height * 2 / (precision*precision));
-	for (size_t i = 0; i < width / precision; ++i)
-	{
-		for (size_t j = 0; j < height / precision; ++j)
-		{
-			if (!in_bounds(origin_x + i * precision, origin_y + j * precision))
+	bool camera_moved = (origin_x != tex_origin[0] || origin_y != tex_origin[1] || width != tex_size[0] || height != tex_size[1]);
+
+	texture.resize(width * height * 2 / (precision * precision));
+
+	int tile_x;
+	int tile_y;
+	int index;
+
+	for (int chunk_x = 0; chunk_x < width / chunk_size; ++chunk_x)
+	for (int chunk_y = 0; chunk_y < height / chunk_size; ++chunk_y)
+		if (!chunk_in_bounds(origin_x / chunk_size + chunk_x, origin_y / chunk_size + chunk_y)
+		|| (camera_moved || chunks[origin_x / chunk_size + chunk_x][origin_y / chunk_size + chunk_y].active))
+			for (int x = 0; x < chunk_size / precision; ++x)
+			for (int y = 0; y < chunk_size / precision; ++y)
 			{
-				materialMatrix[i * (height / precision) * 2 + j * 2] = -1;
-				materialMatrix[i * (height / precision) * 2 + j * 2 + 1] = 0;
-			}
-			else if (chunks[(origin_x + i * precision) / chunk_size][(origin_y + j * precision) / chunk_size].abstracted)
-			{
-				materialMatrix[i * (height / precision) * 2 + j * 2] = deabstractify_tile(origin_x + i * precision, origin_y + j * precision);
-				materialMatrix[i * (height / precision) * 2 + j * 2 + 1] = chunks[(origin_x + i * precision) / chunk_size][(origin_y + j * precision) / chunk_size].active;
-			}
-			else
-			{
-				if (Aerial* aer = dynamic_cast<Aerial*>(tiles[origin_x + i * precision][origin_y + j * precision]))
-					materialMatrix[i * (height / precision) * 2 + j * 2] = aer->p->material;
+				tile_x = origin_x + chunk_x * chunk_size + x * precision;
+				tile_y = origin_y + chunk_y * chunk_size + y * precision;
+				index = ((chunk_x * chunk_size) / precision + x) * (height / precision) * 2 + ((chunk_y * chunk_size) / precision + y) * 2;
+
+				if (!in_bounds(tile_x, tile_y))
+				{
+					texture[index] = -1;
+					texture[index + 1] = 0;
+				}
+				else if (chunks[origin_x / chunk_size + chunk_x][origin_y / chunk_size + chunk_y].abstracted)
+				{
+					texture[index] = deabstractify_tile(tile_x, tile_y);
+					texture[index + 1] = chunks[origin_x / chunk_size + chunk_x][origin_y / chunk_size + chunk_y].active;
+				}
 				else
-					materialMatrix[i * (height / precision) * 2 + j * 2] = tiles[origin_x + i * precision][origin_y + j * precision]->material;
-				materialMatrix[i * (height / precision) * 2 + j * 2 + 1] = chunks[(origin_x + i * precision) / chunk_size][(origin_y + j * precision) / chunk_size].active;
+				{
+					if (Aerial* aer = dynamic_cast<Aerial*>(tiles[tile_x][tile_y]))
+						texture[index] = aer->p->material;
+					else
+						texture[index] = tiles[tile_x][tile_y]->material;
+					texture[index + 1] = chunks[origin_x / chunk_size + chunk_x][origin_y / chunk_size + chunk_y].active;
+				}
 			}
-		}
-	}
-	return materialMatrix;
+
+	return texture;
 }
 
 void SandSim::explode(int x, int y, int force)
@@ -620,6 +637,7 @@ void SandSim::launch(int x, int y, int vel_x, int vel_y, int mode, float param)
 
 void SandSim::abstractify_chunk(int chunk_x, int chunk_y, int material, int volume)
 {
+	return;
 	chunks[chunk_x][chunk_y].abstracted = true;
 	chunks[chunk_x][chunk_y].fill = material;
 
