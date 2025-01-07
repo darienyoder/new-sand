@@ -1,4 +1,9 @@
-﻿  main.cpp
+﻿  input.cpp
+C:\Users\Darien\source\repos\new-sand\new-sand\input.cpp(50,21): warning C4553: '==': result of expression not used; did you intend '='?
+C:\Users\Darien\source\repos\new-sand\new-sand\input.cpp(70,12): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+C:\Users\Darien\source\repos\new-sand\new-sand\input.cpp(71,12): warning C4244: '=': conversion from 'double' to 'int', possible loss of data
+C:\Users\Darien\source\repos\new-sand\new-sand\input.cpp(79,24): warning C4553: '==': result of expression not used; did you intend '='?
+  main.cpp
 C:\Users\Darien\source\repos\new-sand\new-sand\particle.hpp(190,1): warning C4250: 'Wood': inherits 'Flammable::Flammable::tick' via dominance
 C:\Users\Darien\source\repos\new-sand\new-sand\particle.hpp(170,7): message : see declaration of 'Flammable::tick'
 C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(53,34): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
@@ -42,4 +47,5 @@ C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(421,15): warning C4244: 
 C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(421,85): warning C4244: 'initializing': conversion from 'float' to 'int', possible loss of data
 C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(469,68): warning C4244: 'argument': conversion from 'int' to 'GLfloat', possible loss of data
 C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(469,61): warning C4244: 'argument': conversion from 'int' to 'GLfloat', possible loss of data
+  Generating Code...
   new-sand.vcxproj -> C:\Users\Darien\source\repos\new-sand\x64\Debug\new-sand.exe

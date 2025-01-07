@@ -127,15 +127,15 @@ void get_input()
 {
 	input->update();
 
-	if (input->mouse_down)
+	if (input->is_pressed(MOUSE_LEFT))
 		on_click();
-	else if (input->right_mouse_down)
+	else if (input->is_pressed(MOUSE_RIGHT))
 		place_tile(EMPTY);
 
 	if (input->is_pressed(GLFW_KEY_ESCAPE))
 		glfwSetWindowShouldClose(canvas->window, 1);
 
-	if (input->is_pressed(GLFW_KEY_SPACE))
+	if (input->is_just_pressed(GLFW_KEY_SPACE))
 	{
 		run_sim = !run_sim;
 	}
@@ -264,7 +264,7 @@ void on_click()
 			break;
 
 		case 14:
-			if (input->just_click())
+			if (input->is_just_pressed(MOUSE_LEFT))
 			{
 				float mouse_coords[2];
 				screen_to_sim(input->mouse_x, input->mouse_y, mouse_coords);
@@ -273,14 +273,14 @@ void on_click()
 			break;
 
 		case 15:
-			if (input->just_click())
+			if (input->is_just_pressed(MOUSE_LEFT))
 				place_tile(FIREWORK);
 			break;
 				
 		}
 	
 	// if (input->mouse_x > window_margin * 2 + sim.x_size * tile_size && input->mouse_x < window_margin * 2 + sim.x_size * tile_size + button_size)
-	if (input->just_click())
+	if (input->is_just_pressed(MOUSE_LEFT))
 	{
 		for (int i = 0; i < button_count; ++i)
 			if (input->mouse_y > window_margin + (window_margin + button_size) * (i % button_rows) && input->mouse_y < window_margin + (window_margin + button_size) * (i % button_rows) + button_size

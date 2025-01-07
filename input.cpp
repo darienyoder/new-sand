@@ -30,47 +30,33 @@ void InputManager::setup(GLFWwindow* window)
 
 void InputManager::update()
 {
-	keys_just_pressed.clear();
-	keys_just_released.clear();
-	if (mouse_down)
-	{
-		click_time += 1;
-		click_ready = click_ready && click_time < 5;
-	}
-	else
-		click_ready = false;
-
 	glfwPollEvents();
+
+	for (auto it = keys_pressed.begin(); it != keys_pressed.end();)
+	{
+		it->second += 1;
+		if (it->second == 0)
+			it = keys_pressed.erase(it);
+		else
+			it++;
+	}
 }
 
 void InputManager::on_key_callback(GLFWwindow* window_, int key, int scancode, int action, int mods)
 {
-	bool has = false;
 	switch (action)
 	{
 	case GLFW_PRESS:
-		for (std::list<int>::const_iterator pi = keys_pressed.begin(); pi != keys_pressed.end(); ++pi)
-		{
-			if (*pi == key)
-			{
-				has = true;
-				break;
-			}
-		}
-		if (!has)
-		{
-			keys_pressed.push_back(key);
-			keys_just_pressed.push_back(key);
-		}
+		keys_pressed[key] == 0;
 		break;
 
 	case GLFW_RELEASE:
-		for (std::list<int>::const_iterator i = keys_pressed.begin(); i != keys_pressed.end(); ++i)
+		for (auto it = keys_pressed.begin(); it != keys_pressed.end(); it++)
 		{
-			if (key == *i)
+			if (it->first == key)
 			{
-				keys_pressed.erase(i);
-				break;
+				it->second = -input_buffer;
+				break; // If keys can't unpress, try removing this break statement.
 			}
 		}
 		break;
@@ -90,47 +76,46 @@ void InputManager::on_mouse_button_callback(GLFWwindow* window_, int button, int
 	switch (action)
 	{
 	case GLFW_PRESS:
-		if (button == GLFW_MOUSE_BUTTON_LEFT)
+		keys_pressed[button] == 0;
+		break;
+
+	case GLFW_RELEASE:
+		for (auto it = keys_pressed.begin(); it != keys_pressed.end(); it++)
 		{
-			just_clicked = true;
-			click_time = 0;
-			mouse_down = true;
-			click_ready = true;
-		}
-		else if (button == GLFW_MOUSE_BUTTON_RIGHT)
-		{
-			just_right_clicked = true;
-			right_mouse_down = true;
+			if (it->first == button)
+			{
+				it->second = -input_buffer;
+				break; // If keys can't unpress, try removing this break statement.
+			}
 		}
 		break;
-	case GLFW_RELEASE:
-		if (button == GLFW_MOUSE_BUTTON_LEFT)
-			mouse_down = false;
-		else if (button == GLFW_MOUSE_BUTTON_RIGHT)
-			right_mouse_down = false;
+	default:
 		break;
 	}
 }
 
 bool InputManager::is_pressed(int input)
 {
-	for (std::list<int>::const_iterator i = keys_pressed.begin(); i != keys_pressed.end(); ++i)
+	for (auto it = keys_pressed.begin(); it != keys_pressed.end(); it++)
 	{
-		if (*i == input)
-		{
-			return true;
-		}
+		if (it->first == input)
+			return it->second >= 0;
 	}
 	return false;
 }
 
 bool InputManager::is_just_pressed(int input)
 {
-	for (std::list<int>::const_iterator i = keys_just_pressed.begin(); i != keys_just_pressed.end(); ++i)
+	for (auto it = keys_pressed.begin(); it != keys_pressed.end(); it++)
 	{
-		if (*i == input)
+		if (it->first == input)
 		{
-			return true;
+			if (it->second > 0 && it->second < input_buffer)
+			{
+				it->second += input_buffer;
+				return true;
+			}
+			break;
 		}
 	}
 	return false;
@@ -138,22 +123,15 @@ bool InputManager::is_just_pressed(int input)
 
 bool InputManager::is_just_released(int input)
 {
-	for (std::list<int>::const_iterator i = keys_just_released.begin(); i != keys_just_released.end(); ++i)
+	for (auto it = keys_pressed.begin(); it != keys_pressed.end();)
 	{
-		if (*i == input)
+		if (it->first == input && it->second < 0)
 		{
+			it = keys_pressed.erase(it);
 			return true;
 		}
-	}
-	return false;
-}
-
-bool InputManager::just_click()
-{
-	if (click_ready)
-	{
-		click_ready = false;
-		return mouse_down;
+		else
+			++it;
 	}
 	return false;
 }
