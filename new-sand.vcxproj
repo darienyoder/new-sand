@@ -145,12 +145,14 @@
     <ClCompile Include="input.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="particle.cpp" />
+    <ClCompile Include="player.cpp" />
     <ClCompile Include="sandsim.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="drawing.hpp" />
     <ClInclude Include="input.hpp" />
     <ClInclude Include="particle.hpp" />
+    <ClInclude Include="player.hpp" />
     <ClInclude Include="sandsim.hpp" />
   </ItemGroup>
   <ItemGroup>

@@ -1,6 +1,7 @@
 #include "input.hpp"
 
 InputManager* InputManager::instancePtr = nullptr;
+InputManager* Input = InputManager::getInstance();
 
 // Proxy functions
 

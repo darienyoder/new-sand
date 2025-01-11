@@ -683,3 +683,15 @@ void SandSim::make_chunk_active(int chunk_x, int chunk_y)
 		if (chunk_in_bounds(chunk_x + x, chunk_y + y))
 			chunks[chunk_x + x][chunk_y + y].active_next = true;
 }
+
+bool SandSim::is_tile_solid(int x, int y)
+{
+	if (!in_bounds(x, y))
+		return true;
+	Particle* p = &get_tile(x, y);
+	if (Solid* sol = dynamic_cast<Solid*>(p))
+		return true;
+	if (Powder* pow = dynamic_cast<Powder*>(p))
+		return true;
+	return false;
+}

@@ -109,4 +109,6 @@ private:
 	const int input_buffer = 10;
 };
 
+extern InputManager* Input;
+
 #endif

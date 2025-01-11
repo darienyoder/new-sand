@@ -47,6 +47,7 @@ public:
 
 	// In bounds and contains nothing
 	bool is_tile_empty(int x, int y);
+	bool is_tile_solid(int x, int y);
 
 	Particle* create_element(int material);
 

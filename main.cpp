@@ -6,16 +6,17 @@
 #include "drawing.hpp"
 #include "sandsim.hpp"
 #include "input.hpp"
+#include "player.hpp"
 
 bool game_is_running = false;
 float time_since_last_frame = 0.0;
 int target_fps = 60;
-int tps = 200;
+int tps = 60;
 auto t = std::chrono::high_resolution_clock::now();
 auto last_sim_update = t;
 auto last_draw = t;
 
-SandSim sim(400, 240);
+SandSim sim(200, 120);
 InputManager* input = InputManager::getInstance();
 Canvas* canvas;
 
@@ -30,6 +31,8 @@ const int button_min_size = 70;
 int button_size = 70;
 const int button_count = 20;
 int button_rows = 10;
+
+Player player(sim);
 
 float camera_position[2] = { -10, -10 };
 float camera_zoom = 1.0;
@@ -101,6 +104,12 @@ void screen_to_sim(float x, float y, float output[])
 	output[1] = float(-canvas->size.y / 2.0 + y) / camera_zoom + camera_position[1];
 }
 
+void sim_to_screen(float x, float y, float output[])
+{
+	output[0] = (x - camera_position[0]) * camera_zoom + canvas->size.x / 2.0;
+	output[1] = (y - camera_position[1]) * camera_zoom + canvas->size.y / 2.0;
+}
+
 void place_tile(int new_tile, int state = 0)
 {
 	float tile[2];
@@ -140,12 +149,12 @@ void get_input()
 		run_sim = !run_sim;
 	}
 
-	
-	if (input->is_pressed(GLFW_KEY_LEFT))
+	/*
+	if (Input->is_pressed(GLFW_KEY_LEFT))
 	{
 		camera_position[0] -= 0.01 / camera_zoom;
 	}
-	if (input->is_pressed(GLFW_KEY_RIGHT))
+	if (Input->is_pressed(GLFW_KEY_RIGHT))
 	{
 		camera_position[0] += 0.01 / camera_zoom;
 	}
@@ -156,7 +165,11 @@ void get_input()
 	if (input->is_pressed(GLFW_KEY_DOWN))
 	{
 		camera_position[1] += 0.01 / camera_zoom;
-	}
+	}*/
+
+	camera_position[0] = player.x;
+	camera_position[1] = player.y - canvas->size.y / camera_zoom * 0.15;
+
 	if (input->is_pressed(GLFW_KEY_EQUAL))
 	{
 		camera_zoom *= 1.0001;
@@ -316,6 +329,9 @@ void update()
 		last_sim_update = new_time;
 		sim.update();
 	}
+
+	if (run_sim)
+		player.update(delta);
 }
 
 void draw_buttons()
@@ -502,6 +518,11 @@ void draw()
 		canvas->draw_rect(window_margin * 2, window_margin * 2, window_margin * 2, window_margin * 6, 0.0, 1.0, 0.0, VAO, VBO, EBO);
 		canvas->draw_rect(window_margin * 6, window_margin * 2, window_margin * 2, window_margin * 6, 0.0, 1.0, 0.0, VAO, VBO, EBO);
 	}
+
+	float player_pos[2];
+	sim_to_screen(player.x, player.y, player_pos);
+	int player_size[2] = {9, 21};
+	canvas->draw_rect(player_pos[0] - player_size[0]/2 * camera_zoom, player_pos[1] - player_size[1] * camera_zoom, player_size[0] * camera_zoom, player_size[1] * camera_zoom, 0.1, 0.7, 0.2, VAO, VBO, EBO);
 
 	// Swap front and back buffers
 	glfwSwapBuffers(canvas->window);
