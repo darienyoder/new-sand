@@ -83,12 +83,21 @@ vec3 first_pass(vec2 screen_coords, float value)
 	float steam = 0.0;
 	float smoke = 0.0;
 
+	int left = 0, right = 0, down = 0;
+
 	for (int x = -5; x < 6; x++)
 	for (int y = -5; y < 6; y++)
 	{
 		if (x*x + y*y <= 25)
 		{
 			int neighbor = get_material(coords + vec2(x, y));
+			
+			if (x == 0 && y == 1)
+				down = neighbor;
+			else if (x == -1 && y == 0)
+				left = neighbor;
+			else if (x == 1 && y == 0)
+				right = neighbor;
 			
 			if ((true || material == 0 || material == 4 || material == 11) && neighbor == 4)
 				steam += 0.02;
@@ -105,6 +114,19 @@ vec3 first_pass(vec2 screen_coords, float value)
 			if (material == 2 && neighbor == 0 && x == 0 && y == -1)
 				clr = vec3(1.0, 1.0, 1.0);
 		}
+	}
+
+	// Sloping
+	if (false && material == 0)
+	if (down != 0)
+	{
+		if (left != 0)
+			if (coords.x - int(coords.x) < coords.y - int(coords.y))
+				clr = get_material_color(left, value);
+
+		if (right != 0 && (left == 0 || coords.x - int(coords.x) > 0.5))
+			if (coords.x - int(coords.x) + coords.y - int(coords.y) > 1.0)
+				clr = get_material_color(right, value);
 	}
 	
 	clr = vec3(0.9) * steam + clr * (1.0 - steam);

@@ -12,7 +12,7 @@ void Player::update(float delta)
 	if (is_on_floor && Input->is_just_pressed(KEY_UP))
 		vel_y = -200;
 
-	if (!sim->is_tile_solid(x, y + 1))
+	if (can_fit(x, y + 1))
 	{
 		vel_y += 500 * delta;
 		is_on_floor = false;
@@ -20,37 +20,33 @@ void Player::update(float delta)
 	else
 		is_on_floor = true;
 
-	if (!sim->is_tile_solid(x, y + vel_y * delta))
+	if (can_fit(x, y + vel_y * delta))
 	{
 		y = y + vel_y * delta;
 	}
 	else
 		vel_y = 0;
 
-	if (!sim->is_tile_solid(x + vel_x * delta, y))
+	if (can_fit(x + vel_x * delta, y))
 	{
 		x = x + vel_x * delta;
 	}
-	else if (vel_x != 0 && !sim->is_tile_solid(x + vel_x * delta, y - 1))
+	else if (vel_x != 0 && can_fit(x + vel_x * delta, y - 1))
 	{
 		x = x + vel_x * delta;
 		y = y - 1;
 	}
 	else
 		vel_x = 0;
+}
 
-	/*
-	else if (vel_x != 0 && vel_y < 40 * delta && vel_y > 0 && sim->is_tile_empty(x + vel_x * delta, y - 1))
+bool Player::can_fit(int center_x, int center_y)
+{
+	for (int x_ = -size[0] * 0.5; x_ < size[0] * 0.5; x_++)
+	for (int y_ = -size[1] * 0.5; y_ < size[1] * 0.5; y_++)
 	{
-		x = x + vel_x * delta;
-		y = y - 1;
-
-		vel_y = 0;
+		if (sim->is_tile_solid(center_x + x_, center_y + y_))
+			return false;
 	}
-	else
-	{
-		vel_x = 0;
-		vel_y = 0;
-	}
-	*/
+	return true;
 }

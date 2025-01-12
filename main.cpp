@@ -16,7 +16,7 @@ auto t = std::chrono::high_resolution_clock::now();
 auto last_sim_update = t;
 auto last_draw = t;
 
-SandSim sim(200, 120);
+SandSim sim(300, 200);
 InputManager* input = InputManager::getInstance();
 Canvas* canvas;
 
@@ -55,7 +55,7 @@ void setup()
 
 	camera_position[0] = sim.x_size * 0.5;
 	camera_position[1] = sim.y_size * 0.5;
-	camera_zoom = std::max(std::min(float(canvas->size.x - window_margin * 5) / sim.x_size, float(canvas->size.y - window_margin * 5) / sim.y_size), 0.001f);
+	camera_zoom = 5;// std::max(std::min(float(canvas->size.x - window_margin * 5) / sim.x_size, float(canvas->size.y - window_margin * 5) / sim.y_size), 0.001f);
 
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
@@ -169,16 +169,6 @@ void get_input()
 
 	camera_position[0] = player.x;
 	camera_position[1] = player.y - canvas->size.y / camera_zoom * 0.15;
-
-	if (input->is_pressed(GLFW_KEY_EQUAL))
-	{
-		camera_zoom *= 1.0001;
-	}
-	if (input->is_pressed(GLFW_KEY_MINUS))
-	{
-		camera_zoom /= 1.0001;
-	}
-
 
 	if (input->is_pressed(GLFW_KEY_GRAVE_ACCENT))
 	{
@@ -324,6 +314,15 @@ void update()
 	glViewport(0, 0, canvas->size.x, canvas->size.y);
 	glScissor(0, 0, canvas->size.x, canvas->size.y);
 
+	if (input->is_pressed(GLFW_KEY_EQUAL))
+	{
+		camera_zoom *= 1 + .8 * delta;
+	}
+	if (input->is_pressed(GLFW_KEY_MINUS))
+	{
+		camera_zoom /= 1 + .8 * delta;
+	}
+
 	if (run_sim && compare_times(last_sim_update, new_time) > 1.0 / tps)
 	{
 		last_sim_update = new_time;
@@ -442,7 +441,7 @@ void draw_sim2()
 	offset_y = (offset_y / sim.chunk_size) * sim.chunk_size;
 
 	int precision = 1;
-	if (false && width * height > 125'000)
+	if (width * height > 125'000)
 	{
 		precision = 2;
 		if (width * height > 125'000 * 4)
@@ -522,7 +521,7 @@ void draw()
 	float player_pos[2];
 	sim_to_screen(player.x, player.y, player_pos);
 	int player_size[2] = {9, 21};
-	canvas->draw_rect(player_pos[0] - player_size[0]/2 * camera_zoom, player_pos[1] - player_size[1] * camera_zoom, player_size[0] * camera_zoom, player_size[1] * camera_zoom, 0.1, 0.7, 0.2, VAO, VBO, EBO);
+	canvas->draw_rect(player_pos[0] - player_size[0] / 2 * camera_zoom, player_pos[1] - player_size[1] / 2 * camera_zoom, (player_size[0] - 1) * camera_zoom, (player_size[1] - 1) * camera_zoom, 0.1, 0.7, 0.2, VAO, VBO, EBO);
 
 	// Swap front and back buffers
 	glfwSwapBuffers(canvas->window);
