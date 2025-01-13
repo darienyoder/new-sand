@@ -1,5 +1,9 @@
 #include "sandsim.hpp"
 #include <iostream>
+#include <vector>
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 // SandSim
 
@@ -26,6 +30,67 @@ SandSim::SandSim(int width, int height)
 
 	x_size = width;
 	y_size = height;
+}
+
+SandSim::SandSim(const char img_path[])
+{
+	int channels;
+	unsigned char* texture = stbi_load(img_path, &x_size, &y_size, &channels, 0);
+
+	{
+		tiles = new Particle** [x_size];
+		for (int i = 0; i < x_size; ++i)
+		{
+			tiles[i] = new Particle* [y_size];
+		}
+
+		for (int i = 0; i < x_size; ++i)
+			for (int j = 0; j < y_size; ++j)
+			{
+				tiles[i][j] = new Air;
+				tiles[i][j]->material = EMPTY;
+				tiles[i][j]->x = i;
+				tiles[i][j]->y = j;
+			}
+
+		chunks = new chunk* [x_size / chunk_size];
+		for (int x = 0; x < x_size / chunk_size; x++)
+			chunks[x] = new chunk[y_size / chunk_size];
+	}
+
+	std::vector<int> keys;
+	std::vector<int> values;
+
+	for (int y = 0; ; y++)
+	{
+		if (texture[y * x_size * channels + 1 * channels] == 0)
+			break;
+
+		keys.push_back(texture[y * x_size * channels + 0]);
+		keys.push_back(texture[y * x_size * channels + 1]);
+		keys.push_back(texture[y * x_size * channels + 2]);
+
+		values.push_back(texture[y * x_size * channels + 1 * channels]);
+
+		for (int i = 0; i < channels * 2; i++)
+			texture[y * x_size * channels + i] = 0;
+	}
+
+	for (int x = 0; x < x_size; x++)
+	for (int y = 0; y < y_size; y++)
+	{
+		int index = y * x_size * channels + x * channels;
+		for (int key = 0; key < keys.size() / channels; key++)
+		{
+			if (keys[key * keys.size() / channels] == texture[index] && keys[key * keys.size() / channels + 1] == texture[index + 1] && keys[key * keys.size() / channels + 2] == texture[index + 2])
+			{
+				set_tile(x, y, values[key]);
+				break;
+			}
+		}
+	}
+
+	stbi_image_free(texture);
 }
 
 void SandSim::clear()

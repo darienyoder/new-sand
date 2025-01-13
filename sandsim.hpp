@@ -2,6 +2,8 @@
 #define SANDSIM
 
 #include "particle.hpp"
+#include "stb_image.h"
+
 #include <vector>
 
 class Particle;
@@ -28,6 +30,7 @@ class SandSim
 {
 public:
 	SandSim(int width, int height);
+	SandSim(const char img_path[]);
 	~SandSim() {};
 
 	bool in_bounds(int x, int y) { return x > -1 && x < x_size && y > -1 && y < y_size; };

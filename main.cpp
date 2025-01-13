@@ -16,7 +16,7 @@ auto t = std::chrono::high_resolution_clock::now();
 auto last_sim_update = t;
 auto last_draw = t;
 
-SandSim sim(300, 200);
+SandSim sim("maps/map.png");
 InputManager* input = InputManager::getInstance();
 Canvas* canvas;
 

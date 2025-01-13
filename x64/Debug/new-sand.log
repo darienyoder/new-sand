@@ -1,45 +1,17 @@
-﻿  main.cpp
+﻿  sandsim.cpp
 C:\Users\Darien\source\repos\new-sand\new-sand\particle.hpp(190,1): warning C4250: 'Wood': inherits 'Flammable::Flammable::tick' via dominance
 C:\Users\Darien\source\repos\new-sand\new-sand\particle.hpp(170,7): message : see declaration of 'Flammable::tick'
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(56,34): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(57,34): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(109,53): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(110,53): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(116,37): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(116,21): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(125,38): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(125,25): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(126,41): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(126,28): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(127,72): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(127,40): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(171,32): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(273,40): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(273,24): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(274,48): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(274,31): warning C4244: 'argument': conversion from 'float' to 'int', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(304,80): warning C4244: 'return': conversion from 'double' to 'float', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(319,20): warning C4244: '*=': conversion from 'double' to 'float', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(323,20): warning C4244: '/=': conversion from 'double' to 'float', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(362,121): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(362,91): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(362,61): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(362,54): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(362,45): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(362,36): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(362,27): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(369,90): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(369,76): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(369,62): warning C4244: 'argument': conversion from 'double' to 'float', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(369,54): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(369,45): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(369,36): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(369,27): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(435,12): warning C4244: 'initializing': conversion from 'float' to 'int', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(435,56): warning C4244: 'initializing': conversion from 'float' to 'int', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(436,15): warning C4244: 'initializing': conversion from 'float' to 'int', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(436,85): warning C4244: 'initializing': conversion from 'float' to 'int', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(484,68): warning C4244: 'argument': conversion from 'int' to 'GLfloat', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(484,61): warning C4244: 'argument': conversion from 'int' to 'GLfloat', possible loss of data
-C:\Users\Darien\source\repos\new-sand\new-sand\main.cpp(524,220): warning C4305: 'argument': truncation from 'double' to 'float'
+C:\Users\Darien\source\repos\new-sand\new-sand\sandsim.cpp(525,41): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+C:\Users\Darien\source\repos\new-sand\new-sand\sandsim.cpp(528,41): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+C:\Users\Darien\source\repos\new-sand\new-sand\sandsim.cpp(531,41): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+C:\Users\Darien\source\repos\new-sand\new-sand\sandsim.cpp(534,41): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+C:\Users\Darien\source\repos\new-sand\new-sand\sandsim.cpp(557,25): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+C:\Users\Darien\source\repos\new-sand\new-sand\sandsim.cpp(558,14): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\Darien\source\repos\new-sand\new-sand\sandsim.cpp(564,17): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\Darien\source\repos\new-sand\new-sand\sandsim.cpp(575,53): warning C4244: '-=': conversion from 'double' to 'float', possible loss of data
+C:\Users\Darien\source\repos\new-sand\new-sand\sandsim.cpp(596,53): warning C4244: '-=': conversion from 'double' to 'float', possible loss of data
+C:\Users\Darien\source\repos\new-sand\new-sand\sandsim.cpp(620,18): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+C:\Users\Darien\source\repos\new-sand\new-sand\sandsim.cpp(649,35): warning C4244: '=': conversion from 'float' to 'int', possible loss of data
+C:\Users\Darien\source\repos\new-sand\new-sand\sandsim.cpp(697,16): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
+C:\Users\Darien\source\repos\new-sand\new-sand\sandsim.cpp(698,16): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
   new-sand.vcxproj -> C:\Users\Darien\source\repos\new-sand\x64\Debug\new-sand.exe
