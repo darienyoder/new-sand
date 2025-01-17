@@ -10,11 +10,19 @@ void Player::update(float delta)
 		vel_x = 0;
 
 	if (is_on_floor && Input->is_just_pressed(KEY_UP))
-		vel_y = -200;
+		vel_y = -150;
+	else if (Input->is_pressed(KEY_UP) && sim->get_tile(x, y).material == WATER)
+		vel_y = -50;
 
 	if (can_fit(x, y + 1))
 	{
-		vel_y += 500 * delta;
+		if (sim->get_tile(x, y).material == WATER)
+		{
+			if (!Input->is_pressed(KEY_UP))
+				vel_y = 30;
+		}
+		else
+			vel_y += 500 * delta;
 		is_on_floor = false;
 	}
 	else
@@ -45,6 +53,8 @@ bool Player::can_fit(int center_x, int center_y)
 	for (int x_ = -size[0] * 0.5; x_ < size[0] * 0.5; x_++)
 	for (int y_ = -size[1] * 0.5; y_ < size[1] * 0.5; y_++)
 	{
+		if (vel_y > 0 && y_ == ceil(size[1] * 0.5) - 1 && sim->get_tile(center_x + x_, center_y + y_).material == PLATFORM && !Input->is_pressed(KEY_DOWN))
+			return false;
 		if (sim->is_tile_solid(center_x + x_, center_y + y_))
 			return false;
 	}

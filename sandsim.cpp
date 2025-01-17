@@ -82,7 +82,7 @@ SandSim::SandSim(const char img_path[])
 		int index = y * x_size * channels + x * channels;
 		for (int key = 0; key < keys.size() / channels; key++)
 		{
-			if (keys[key * keys.size() / channels] == texture[index] && keys[key * keys.size() / channels + 1] == texture[index + 1] && keys[key * keys.size() / channels + 2] == texture[index + 2])
+			if (keys[key * channels] == texture[index] && keys[key * channels + 1] == texture[index + 1] && keys[key * channels + 2] == texture[index + 2])
 			{
 				set_tile(x, y, values[key]);
 				break;
@@ -236,6 +236,9 @@ Particle* SandSim::create_element(int material)
 	case FIREWORK:
 		ptr = new Firework;
 		break;
+	case PLATFORM:
+		ptr = new Platform;
+		break;
 	default:
 		ptr = new Air;
 		break;
@@ -265,11 +268,14 @@ void SandSim::update()
 		if (chunks[chunk_x][chunk_y].active)
 		{
 			// If abstracted
-			if (chunks[chunk_x][chunk_y].abstracted && false)
+			if (chunks[chunk_x][chunk_y].abstracted)
 			{
 				// Skip empty chunks
 				if (chunks[chunk_x][chunk_y].fill != EMPTY)
 				{
+					if (is_chunk_concrete(chunk_x, chunk_y))
+						deabstract(chunk_x, chunk_y);
+
 					// Get state of chunk fill
 					int state = 0;
 					if (Powder* pow = dynamic_cast<Powder*>(sample[chunks[chunk_x][chunk_y].fill]))
@@ -702,7 +708,9 @@ void SandSim::launch(int x, int y, int vel_x, int vel_y, int mode, float param)
 
 void SandSim::abstractify_chunk(int chunk_x, int chunk_y, int material, int volume)
 {
-	return;
+	if (is_chunk_concrete(chunk_x, chunk_y))
+		return;
+
 	chunks[chunk_x][chunk_y].abstracted = true;
 	chunks[chunk_x][chunk_y].fill = material;
 

@@ -20,6 +20,8 @@ public:
 	int size[2] = {9, 21};
 
 	SandSim* sim = 0;
+
+	int hp = 100;
 private:
 };
 

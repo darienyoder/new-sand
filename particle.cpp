@@ -236,7 +236,7 @@ bool Acid::can_move_through(int x_, int y_)
 		if (Gas* gas = dynamic_cast<Gas*>(&sim->get_tile(x_, y_)))
 			return true;
 		// Everything else is a wall
-		return std::rand() % 100 < 10;
+		return std::rand() % (sim->get_tile(x_, y_).hp * 10) < 1;
 	}
 	return false;
 }
@@ -312,7 +312,7 @@ bool Fire::tick()
 			if (sim->is_tile_empty(x + x_, y + y_))
 			{
 				covered = false;
-				if (std::rand() % 256 == 0)
+				if (std::rand() % 1024 == 0)
 					sim->set_tile(x + x_, y + y_, SMOKE);
 			}
 

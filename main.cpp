@@ -16,7 +16,7 @@ auto t = std::chrono::high_resolution_clock::now();
 auto last_sim_update = t;
 auto last_draw = t;
 
-SandSim sim("maps/map.png");
+SandSim sim("maps/burning-house.png");
 InputManager* input = InputManager::getInstance();
 Canvas* canvas;
 
@@ -169,6 +169,11 @@ void get_input()
 
 	camera_position[0] = player.x;
 	camera_position[1] = player.y - canvas->size.y / camera_zoom * 0.15;
+
+	sim.concrete_rect[0] = int(camera_position[0] - canvas->size.x / .1 * 0.5) / sim.chunk_size;
+	sim.concrete_rect[1] = int(camera_position[1] - canvas->size.y / .1 * 0.5) / sim.chunk_size;
+	sim.concrete_rect[2] = int(canvas->size.x / .1) / sim.chunk_size;
+	sim.concrete_rect[3] = int(canvas->size.y / .1) / sim.chunk_size;
 
 	if (input->is_pressed(GLFW_KEY_GRAVE_ACCENT))
 	{
@@ -544,13 +549,13 @@ int main(int argc, char* argv[])
 
 		update();
 
-		update_time += compare_times(now, std::chrono::high_resolution_clock::now());
+		update_time = compare_times(now, std::chrono::high_resolution_clock::now());
 		now = std::chrono::high_resolution_clock::now();
 
 		if (compare_times(last_draw, t) > 1.0 / target_fps)
 			draw();
 
-		draw_time += compare_times(now, std::chrono::high_resolution_clock::now());
+		draw_time = compare_times(now, std::chrono::high_resolution_clock::now());
 		now = std::chrono::high_resolution_clock::now();
 	}
 

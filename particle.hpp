@@ -22,6 +22,7 @@ enum {
 	WOOD,
 	AERIAL,
 	FIREWORK,
+	PLATFORM,
 };
 
 class Particle
@@ -43,7 +44,7 @@ public:
 
 	int material = EMPTY;
 	int x = 0, y = 0;
-	int r = 255, g = 0, b = 0;
+	//int r = 255, g = 0, b = 0;
 	int hp = 1;
 
 	bool about_to_delete = false;
@@ -236,6 +237,15 @@ class Firework : public Particle
 public:
 	Firework() {};
 	bool tick();
+};
+
+class Platform : public Flammable
+{
+public:
+	Platform()
+	{
+		hp = 3;
+	}
 };
 
 #endif

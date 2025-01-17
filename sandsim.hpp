@@ -33,7 +33,7 @@ public:
 	SandSim(const char img_path[]);
 	~SandSim() {};
 
-	bool in_bounds(int x, int y) { return x > -1 && x < x_size && y > -1 && y < y_size; };
+	bool in_bounds(int x, int y) { return x > -1 && x < x_size&& y > -1 && y < y_size; };
 	bool chunk_in_bounds(int x, int y) { return x > -1 && x < x_size / chunk_size && y > -1 && y < y_size / chunk_size; };
 
 	Particle& get_tile(int x, int y);
@@ -74,6 +74,9 @@ public:
 
 	chunk** chunks = 0;
 	const int chunk_size = 20;
+
+	int concrete_rect[4] = {0, 0, 0, 0};
+	bool is_chunk_concrete(int x, int y) { return x > concrete_rect[0] && y > concrete_rect[1] && x < concrete_rect[0] + concrete_rect[2] && y < concrete_rect[1] + concrete_rect[3]; }
 
 
 	std::vector<int>& get_texture_data(int origin_x, int origin_y, int width, int height, int precision = 1);

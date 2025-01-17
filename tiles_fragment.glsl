@@ -62,6 +62,8 @@ vec3 get_material_color(int material, float value)
 		return vec3(1.0); // this will never be used
 	else if (material == 14) // FIREWORK
 		return vec3(0.9, 0.4, 0.1);
+	else if (material == 15) // PLATFORM
+		return vec3(0.427, 0.275, 0.012) * 2.0 * value;
 
 	return vec3(1.0, 0.2, 1.0);
 }
