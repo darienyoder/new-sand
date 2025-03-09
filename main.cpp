@@ -197,7 +197,7 @@ void get_input()
 		mouse_action = 4;
 	}
 
-	if (input->is_pressed(GLFW_KEY_D))
+	/*if (input->is_pressed(GLFW_KEY_D))
 	{
 		for (int x = 0; x < sim.x_size / sim.chunk_size; x++)
 			for (int y = 0; y < sim.y_size / sim.chunk_size; y++)
@@ -205,7 +205,7 @@ void get_input()
 				sim.deabstract(x, y);
 				sim.chunks[x][y].just_deabstractified = false;
 			}
-	}
+	}*/
 }
 
 void on_click()
@@ -561,8 +561,8 @@ int main(int argc, char* argv[])
 
 	cleanup();
 
-	std::cout << "UPDATE: " << int(update_time / (update_time + draw_time) * 100) << "%\n";
-	std::cout << "  DRAW: " << int(draw_time / (update_time + draw_time) * 100) << "%\n";
+	std::cout << "UPDATE: " << update_time << "s\n";
+	std::cout << "  DRAW: " << draw_time << "s\n";
 
 	return 0;
 }
